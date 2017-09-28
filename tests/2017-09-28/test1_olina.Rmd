@@ -1,0 +1,97 @@
+---
+title: "test1_olina"
+output: html_document
+---
+
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+You can use book, google for examples, etc. Please use dplyr and ggplot as appropriate to explore, obtain results, and present findings.
+
+```{r}
+library(ggplot2)
+library(nycflights13)
+library(lubridate)
+library(dplyr)
+df <- flights
+```
+```{r}
+flights
+```
+
+
+## Task 1
+Imagine you are choosing a ticket to fly _from_ JFK. You want to know which day of the week (Mon, Tue, ...) has lowest delays, and which one largest. How big is the difference? Is it big enough to make you choose one day vs another? 
+
+__Hint__
+use lubridate package. Google "lubridate vignette". Many packages in R have these "vignettes" showing examples and explaining how to use a package. You will have to combine columns. There is a function which will provide you with the weekday number, given the columns with date. Be careful in interpreting a returned result.
+
+```{r}
+flights_delay_by_day <- group_by(flights, wday(time_hour, label = TRUE))
+summarise(flights_delay_by_day, 
+          dep_delay_mean = mean(dep_delay, na.rm = TRUE),
+          arr_delay_mean = mean(arr_delay, na.rm = TRUE)) %>%
+arrange(dep_delay_mean)
+```
+By calculating the departure and arrival delays, we can see that on average, Saturdays have lowest delays and Thursdays have highest delays.
+
+## Taks 2
+Now choose a particular destination, what can you say now?
+```{r}
+(flights_delay_by_day_IAH <- filter(flights, dest == "IAH") %>%
+  group_by(wday(time_hour, label = TRUE))%>%
+  summarise(dep_delay_mean = mean(dep_delay, na.rm = TRUE),
+          arr_delay_mean = mean(arr_delay, na.rm = TRUE))%>%
+   arrange(dep_delay_mean)
+   )
+
+flights_delay_IAH <- filter(flights, dest == "IAH") %>%
+    mutate(wkday = wday(time_hour, label = TRUE))
+
+flights_delay_IAH_ <- filter(flights, dest == "IAH") %>%
+    mutate(wkday = wday(time_hour, label = TRUE))%>%
+    filter(dep_delay<300)
+
+  ggplot(data = flights_delay_IAH_) +
+  geom_boxplot(mapping = aes(x = wkday,y = dep_delay))
+  
+  ggplot(data = flights_delay_IAH) +
+  geom_point(mapping = aes(x = arr_delay,y = dep_delay,color = wkday))
+```
+This is for the destination IAH (George Bush Intercontinental Airport). The table shows that the delay situation is similar to the general data. The delays are lowest on Tuesdays and Saturdays, highest on Mondays and Thursdays. In general, the average delay is little lower than average for all airports.
+The boxplot and dotplot shows that there's no significant difference between the days.The medians are similar. 
+
+## Taks 3
+Now for a chosen destination, choose a best carrier-weekday combination. Compare it to the worst one.
+```{r}
+flights_delay_IAH
+
+ggplot(data = flights_delay_IAH) + 
+  geom_point(mapping = aes(x = arr_delay,y = dep_delay),alpha = 1/10) +
+  facet_grid(carrier~wkday)
+```
+The graph shows the delay time vesues arrival time. An ideal flight would be positioned at the bottom left. The 14 grids are for different combinations of weekdays and carriers. It seemss that the best choice would be AA(American Airways) on Saturdays. The delays are minimum and there's few outliers. The UA(United Airlines) delays are significantly higher than the AA carrier, and Thursdays seems to be the worst with higher outliers.
+
+```{r}
+ggplot(data = flights_delay_IAH_) + 
+  geom_boxplot(mapping = aes(x=wkday, y = dep_delay)) +
+  facet_wrap(~carrier)
+```
+(to see a clearer trend, data with )
+This boxplot also compares the two companies and weekdays. It shows that AA have less outliers and lower median.
+
+## Task 4
+For the chosen best carrier-destination combination compare delays at a regular day vs one of the national holidays.
+```{r}
+(flights_delay_by_day_IAH_AA <- 
+   filter(flights_delay_IAH,wkday == "Sat") %>%
+    mutate(d_d = lubridate::date(time_hour)))
+
+(flights_delay_by_day_IAH_AA_date <- 
+  filter(flights_delay_by_day_IAH_AA, d_d == "2014-12-25"))
+```
+Haven't find a holiday with flights yet...
+
+
