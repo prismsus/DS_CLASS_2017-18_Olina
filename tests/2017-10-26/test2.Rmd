@@ -1,0 +1,126 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(ggplot2)
+library(tidyverse)
+library(lubridate)
+library(stringr)
+library(forcats)
+```
+
+## Chicago taxi data
+https://data.cityofchicago.org/Transportation/Taxi-Trips/wrvz-psew/data 
+
+### Data description: This is data from taxi trips reported to the city of Chicago. There are total 112860054 rows and 23 variables including information about the taxi, time, location and expenses.
+
+### Time estimation: download for 100 seconds, 57.1MB, 194455 rows. So the time takes to download whole dataset should be about 16 hours. Size of whole data set should be about 33GB.
+
+```{r}
+df = read.csv("Taxi_Trips.csv")
+df
+```
+
+## Analysis
+### 6. After you have data, Make table with day of the week in the column name, Length of a trip in vertical (you will have to cut it, to let say 5 intervals), and average tip in cells 
+
+###6a. Be carefull - if you apply cut blindly, using intervals, outliers (if present) can make this cutting useless. You need to see how many records there are in every group.
+
+- Clean variable "Tips"
+```{r}
+df$Tips <- str_replace_all(df$Tips, "\\$", "") %>%
+  as.numeric()
+```
+
+- Get three variables
+```{r}
+table_tips <- df %>% 
+  select(Trip.Start.Timestamp, Trip.End.Timestamp, Tips) %>%
+  mutate(Start_date = mdy_hms(Trip.Start.Timestamp))  %>%
+  mutate(wkday = wday(Start_date, label = TRUE)) %>%
+  separate(Start_date, c("st_date","st_time"), sep = " ") %>%
+  separate(st_time, c("st_hr","st_min","st_sc"), sep = ":") %>%
+  mutate(End_date = mdy_hms(Trip.End.Timestamp))  %>%
+  separate(End_date, c("ed_date","ed_time"), sep = " ") %>%
+  separate(ed_time, c("ed_hr","ed_min","ed_sc"), sep = ":") %>%
+  mutate(hr = as.numeric(ed_hr) - as.numeric(st_hr)) %>%
+  mutate(min = as.numeric(ed_min) - as.numeric(st_min)) %>%
+  filter(hr>0) %>%
+  mutate(Duration = hr*60 + min) %>%
+  select(wkday,Duration,Tips) 
+  table_tips 
+```
+
+- Select intervals so that there's enough data in each cell.
+```{r}
+table_tips_n_ob <- table_tips %>%
+  group_by(wkday, Duration_interval = cut(Duration,breaks = c(0,15,30,45,60,1500)))%>%
+  summarise(ob = n()) %>%
+  spread(wkday,ob)
+table_tips_n_ob
+
+table_tips_n_ob_group <- table_tips %>%
+  group_by(Duration_interval = cut(Duration,breaks = c(0,15,30,45,60,1500)))%>%
+  summarise(ob = n())
+table_tips_n_ob_group
+```
+
+- Average tip for each day and duration of trip
+```{r}
+table_tips_wkday <- table_tips %>%
+  group_by(wkday, Duration_interval = cut(Duration, breaks = c(0,15,30,45,60,1500))) %>%
+  summarise(avg_tip = mean(Tips, na.rm = T)) %>%
+  spread(wkday,avg_tip)%>%
+mutate(Duration_interval = fct_recode(Duration_interval, `15 min` = "(0,15]", 
+                                  `30 min` = "(15,30]",
+                                  `45 min` = "(30,45]",
+                                  `60 min` = "(45,60]",
+                                  `Over an hour` = "(60,1.5e+03]"
+))
+table_tips_wkday
+```
+
+
+
+###6b. Combine length of trip with number of recods in parentecies - to use as first column 
+
+```{r}
+table_tips_n_ob_group$ob<- paste0("(",format(table_tips_n_ob_group$ob),")")
+table_tips_wkday %>%
+  mutate(n_obsevations = table_tips_n_ob_group$ob) %>%
+  unite(`Duration(n of observations)`, Duration_interval, n_obsevations, sep = " ")
+```
+
+
+###Plot this data. Make plot with separation by morning-day-evening-night. Best to drive 
+
+- Get time of week, time of day and corresponding tips.
+```{r}
+table_time <- df %>% 
+  select(Trip.Start.Timestamp, Tips) %>%
+  mutate(Start_date = mdy_hms(Trip.Start.Timestamp))  %>%
+  mutate(wkday = wday(Start_date, label = TRUE)) %>%
+  separate(Start_date, c("st_date","st_time"), sep = " ") %>%
+  separate(st_time, c("st_hr","st_min","st_sc"), sep = ":") %>%
+  mutate(start_hr = as.numeric(st_hr)) %>%
+  select(Tips, start_hr, wkday) %>%
+  group_by(wkday, time_of_day = cut(start_hr, breaks = c(0,6,9,16,20,24))) %>%
+  filter(is.na(time_of_day) == F) %>%
+  summarise(avg_tip = mean(Tips, na.rm = T)) 
+table_time
+```
+```{r}
+table_time_of_day <- table_time %>%
+  mutate(time_of_day = fct_recode(time_of_day, Before_dawn = "(0,6]", 
+                                  Morning = "(6,9]",
+                                  Day = "(9,16]",
+                                  Evening = "(16,20]",
+                                  Night = "(20,24]"
+))
+
+ggplot(table_time_of_day, aes(x = time_of_day, y = wkday)) +
+  geom_tile(mapping = aes(fill = avg_tip))
+```
+According to the graph, the tips are generally higher during Saturday or during the morning.
