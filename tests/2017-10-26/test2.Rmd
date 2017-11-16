@@ -18,7 +18,17 @@ https://data.cityofchicago.org/Transportation/Taxi-Trips/wrvz-psew/data
 
 ### Data description: This is data from taxi trips reported to the city of Chicago. There are total 112860054 rows and 23 variables including information about the taxi, time, location and expenses.
 
+*********************
++(rows), +(vars), +(info)
+Please distinct between header and normal text - ttry pressign Previw and see how it looks in html 
+
+
+
 ### Time estimation: download for 100 seconds, 57.1MB, 194455 rows. So the time takes to download whole dataset should be about 16 hours. Size of whole data set should be about 33GB.
+
+
+******************
++(time), +(size)
 
 ```{r}
 df = read.csv("Taxi_Trips.csv")
@@ -84,7 +94,8 @@ mutate(Duration_interval = fct_recode(Duration_interval, `15 min` = "(0,15]",
 table_tips_wkday
 ```
 
-
+****************************
++(data preparation), +(table), +(cut)
 
 ###6b. Combine length of trip with number of recods in parentecies - to use as first column 
 
@@ -94,6 +105,10 @@ table_tips_wkday %>%
   mutate(n_obsevations = table_tips_n_ob_group$ob) %>%
   unite(`Duration(n of observations)`, Duration_interval, n_obsevations, sep = " ")
 ```
+
+
+****************
+-(combined N)
 
 
 ###Plot this data. Make plot with separation by morning-day-evening-night. Best to drive 
@@ -126,3 +141,12 @@ ggplot(table_time_of_day, aes(x = time_of_day, y = wkday)) +
   geom_tile(mapping = aes(fill = avg_tip))
 ```
 According to the graph, the tips are generally higher during Saturday or during the morning.
+
+******************
++(plot), +(interpretation)
+
+***************
++(general formatting, attention to details)
+
+*****************
+Total grade 12/12
