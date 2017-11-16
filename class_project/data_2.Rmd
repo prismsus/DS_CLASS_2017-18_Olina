@@ -1,0 +1,544 @@
+---
+title: "Produce 101 seasons 1 & 2 data analysis"
+author: Olina Liang
+date: October 19, 2017
+output: #md_document
+  ioslides_presentation:
+    widescreen: true
+    smaller: true
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(cache = TRUE, message=FALSE, echo = F)
+#options(knitr.table.format = "html") 
+```
+# Produce 101
+## Introduction
+- Produce 101 is a korean survival reality show on Mnet. 
+- It is a large-scale project in which the public (called 'national producers') "produces" a unit group by choosing 11 members among 101 trainees from over 50 entertainment companies.
+- The show has 11 episodes.
+- In the first two episodes, the trainees' are ranked by judges from A to E based on their perfromance which determines their position in the first trailor. And in each episode, their ranking are calculated by votings by viewers, the bottom ones are eliminated.
+- There are different votings based on their performance in different tasks.
+- Season 1 consist of all girls while season 2 is all boys.
+- This project aims to explore which kind of trainees are more likely to debut.
+
+## Packages
+```{r, message=FALSE, echo = T}
+library(readxl)
+library(rvest)
+library(ggplot2)
+library(tidyverse)
+library(gridExtra)
+library(stringr)
+library(ggvis)
+library(ggbio)
+library(knitr)
+library(kableExtra)
+```
+
+# Cleaning data
+## Data
+- Data from webpage (Wikipedia)
+- https://en.wikipedia.org/wiki/List_of_Produce_101_contestants
+- https://en.wikipedia.org/wiki/List_of_Produce_101_Season_2_contestants
+- Korean TV show produce 101, seasons 1 and 2
+- Tables for overall rank & performances for different tasks
+```{r}
+#get data from web
+#s1
+webpage1 <- read_html("https://en.wikipedia.org/wiki/List_of_Produce_101_contestants")
+#table 1
+tbls_s1 <- webpage1 %>%
+  html_nodes("table")%>%
+  .[1] %>%
+  html_table(fill = TRUE)
+
+#s2
+webpage2 <- read_html("https://en.wikipedia.org/wiki/List_of_Produce_101_Season_2_contestants")
+#table 1
+tbls_s2 <- webpage2 %>%
+  html_nodes("table")%>%
+  .[1] %>%
+  html_table(fill = T)
+```
+
+```{r, message=FALSE}
+#s1
+pd101_s1_ <- tbls_2s[[1]]
+pd101_s1_$Company <- str_replace_all(pd101_s1_$Company, "[^[:ascii:]]", "") %>%
+  str_replace_all("\\(.*\\)", "")
+pd101_s1_$Name <- str_replace_all(pd101_s1_$Name, "[^[:ascii:]]", "") %>%
+  str_replace_all("\\(.*\\)", "") 
+pd101_s1_$Name <- gsub("[[:digit:]]", "", pd101_s1_$Name)
+names(pd101_s1_) <-  make.names(names(pd101_s1_), unique = T)
+pd101_s1_tbl1 <- 
+  filter(pd101_s1_, Age>10&Age<50) %>%
+mutate(age = type.convert(Age), 
+       ranking = type.convert(Ranking),
+       evaluation1 = type.convert(Judges.evaluation),
+       evaluation1_num = as.numeric(evaluation1),
+       evaluation2 = type.convert(Judges.evaluation.1),
+       evaluation2_num = as.numeric(evaluation2), 
+       ranking_ep1 = as.numeric(Ranking),
+       ranking_ep2 = as.numeric(Ranking.1))
+pd101_s1_tbl1 <- pd101_s1_tbl1 %>%
+  mutate(Name = str_trim(Name))
+
+#s2
+tbl1 <- tbls_ls[[1]]
+
+tbl1$Company <- str_replace_all(tbl1$Company, "[^[:ascii:]]", "") %>%
+  str_replace_all("\\(.*\\)", "")
+tbl1$Name <- str_replace_all(tbl1$Name, "[^[:ascii:]]", "") %>%
+  str_replace_all("\\(.*\\)", "") 
+tbl1$Name <- gsub("[[:digit:]]", "", tbl1$Name)
+
+names(tbl1) <-  make.names(names(tbl1), unique = T)
+
+table_1 <- 
+  filter(tbl1, Age>10&Age<50)
+
+pd101_s2_tbl1 <- 
+mutate(table_1, age = type.convert(table_1$Age), 
+       ranking = type.convert(table_1$Ranking),
+       evaluation1 = type.convert(Judges.evaluation),
+       evaluation1_num = as.numeric(evaluation1),
+       evaluation2 = type.convert(Judges.evaluation.1),
+       evaluation2_num = as.numeric(evaluation2), 
+       ranking_ep1 = as.numeric(Ranking),
+       ranking_ep2 = as.numeric(Ranking.1))
+pd101_s2_tbl1 <- pd101_s2_tbl1 %>%
+  mutate(Name = str_trim(Name))
+
+#table 2
+tbl2 <- webpage2 %>%
+  html_nodes("table")%>%
+  .[2] %>%
+  html_table(fill = TRUE)
+```
+
+## Data table
+- Cleaned name of trainees
+- Changed type of age and ranking to integers
+- Assigned evaluation numeric values
+
+## Data table season 1
+
+```{r}
+kable(pd101_s1_tbl1, "html") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "responsive")) %>%
+  scroll_box(width = "90%", height = "300px")
+```
+
+## Data table season 1
+```{r}
+kable(pd101_s2_tbl1, "html") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "responsive")) %>%
+  scroll_box(width = "90%", height = "300px")
+```
+
+
+# Analysis
+# Age of trainees
+## Age distribution table
+- Not random
+```{r}
+pd101_s1_tbl1 <- pd101_s1_tbl1 %>%
+  mutate(final_ranking = as.numeric(Ranking.12))
+
+pd101_s2_tbl1 <- pd101_s2_tbl1 %>%
+  mutate(final_ranking = as.numeric(Ranking.12))
+
+pd101_s1_tbl1 %>%
+  count(cut_width(age, 5))
+
+pd101_s2_tbl1 %>%
+  count(cut_width(age, 5))
+```
+## Age bar plot season 1
+- Most trainees around 20 years old.
+```{r}
+ggplot(data = pd101_s1_tbl1) +
+ geom_bar(mapping = aes (x = age), color = "palevioletred1")
+```
+
+## Age bar plot season 2
+- Most trainees around 23 years old.
+```{r}
+ggplot(data = pd101_s2_tbl1) +
+ geom_bar(mapping = aes (x = age), color = "steelblue2")
+```
+
+## Age frequncy comparison
+- Age of female trainees are generally younger than male trainees.
+```{r}
+#ggplot(data = pd101_s1_tbl1) +
+#geom_bar(mapping = aes (x = age))
+
+#ggplot(data = pd101_s2_tbl1) +
+#geom_bar(mapping = aes (x = age))
+
+pd101_s1_tbl1$season <- "season 1"
+pd101_s2_tbl1$season <- "season 2"
+
+dd <- dplyr::bind_rows(pd101_s1_tbl1[, c("age", "season")],
+              pd101_s2_tbl1[, c("age", "season")])
+
+#dd
+
+ggplot() +
+  geom_freqpoly(data = dd, mapping = aes(x = age, color = season)) 
+
+
+```
+
+## Age and ranking season 1
+- The ranking in first episode is more based on first impression while final ranking is based on viewers' holistic evaluation of a trainee.
+- Lighter color represents ranking in first episode, darker represents ranking in last episode
+- Left one cut by number, right one cut by age interval
+- The younger trainees' ranking tend to increase while the older trainees' ranking tend to decrease.
+```{r, warning=F}
+t1 <- ggplot(data = pd101_s1_tbl1) + 
+  geom_boxplot(mapping = aes(x = age, y = ranking, group = cut_number(age, 5)), alpha = 0.4, color = "palevioletred1") + 
+  geom_boxplot(mapping = aes(x = age, y = final_ranking, group = cut_number(age, 5)),alpha = 0.3, color = "palevioletred4")
+
+t2<- ggplot(data = pd101_s1_tbl1) + 
+  geom_boxplot(mapping = aes(x = age, y = ranking, group = cut_width(age, 3)), alpha = 0.4, color = "palevioletred1") + 
+  geom_boxplot(mapping = aes(x = age, y = final_ranking, group = cut_width(age, 3)),alpha = 0.3, color = "palevioletred4")
+
+grid.arrange(t1, t2, ncol=2)
+```
+## Age and ranking season 1
+- The ranking in first episode is more based on first impression while final ranking is based on viewers' holistic evaluation of a trainee.
+- Lighter color represents ranking in first episode, darker represents ranking in last episode
+- Left one cut by number, right one cut by age interval
+- No patterns
+```{r}
+t1 <- ggplot(data = pd101_s2_tbl1) + 
+  geom_boxplot(mapping = aes(x = age, y = ranking, group = cut_number(age, 5)), alpha = 0.4, color = "steelblue2") + 
+  geom_boxplot(mapping = aes(x = age, y = final_ranking, group = cut_number(age, 5)),alpha = 0.3, color = "steelblue4")
+
+t2<- ggplot(data = pd101_s2_tbl1) + 
+  geom_boxplot(mapping = aes(x = age, y = ranking, group = cut_width(age, 3)), alpha = 0.4, color = "steelblue2") + 
+  geom_boxplot(mapping = aes(x = age, y = final_ranking, group = cut_width(age, 3)),alpha = 0.3, color = "steelblue4")
+
+grid.arrange(t1, t2, ncol=2)
+```
+
+## Age box plot and ranking comparison
+- Cut by number on the left, cut by age interval on the right.
+- Girls around 20 has best ranking, while younger boys (~17) have best ranking.
+```{r, warning=F}
+t1 <- ggplot(data = pd101_s1_tbl1) + 
+  geom_boxplot(mapping = aes(x = age, y = ranking, group = cut_number(age, 5)), alpha = 0.4, color = "palevioletred1") + 
+  geom_boxplot(mapping = aes(x = age, y = final_ranking, group = cut_number(age, 5)),alpha = 0.3, color = "palevioletred4")
+
+t2<- ggplot(data = pd101_s1_tbl1) + 
+  geom_boxplot(mapping = aes(x = age, y = ranking, group = cut_width(age, 3)), alpha = 0.4, color = "palevioletred1") + 
+  geom_boxplot(mapping = aes(x = age, y = final_ranking, group = cut_width(age, 3)),alpha = 0.3, color = "palevioletred4")
+
+t3 <- ggplot(data = pd101_s2_tbl1) + 
+  geom_boxplot(mapping = aes(x = age, y = ranking, group = cut_number(age, 5)), alpha = 0.4, color = "steelblue2") + 
+  geom_boxplot(mapping = aes(x = age, y = final_ranking, group = cut_number(age, 5)),alpha = 0.3, color = "steelblue4")
+
+t4 <- ggplot(data = pd101_s2_tbl1) + 
+  geom_boxplot(mapping = aes(x = age, y = ranking, group = cut_width(age, 3)), alpha = 0.4, color = "steelblue2") + 
+  geom_boxplot(mapping = aes(x = age, y = final_ranking, group = cut_width(age, 3)),alpha = 0.3, color = "steelblue4")
+
+grid.arrange(t1, t2, t3, t4, ncol=2)
+```
+
+
+# Judge evaluation
+## Distribution in season 1
+- Most people in F, least in A
+- More people in A for the second time
+```{r}
+t1 <- ggplot(data = pd101_s1_tbl1) +
+ geom_bar(mapping = aes (x = Judges.evaluation), color = "palevioletred1")
+
+t2 <- pd101_s1_tbl1 %>%
+  filter(Judges.evaluation.1 == "A"|Judges.evaluation.1 == "B"|Judges.evaluation.1 == "C"|Judges.evaluation.1 == "D"|Judges.evaluation.1 == "F") %>%
+ggplot() +
+ geom_bar(mapping = aes (x = Judges.evaluation.1), color = "palevioletred1")
+
+grid.arrange(t1, t2, ncol=2)
+```
+
+## Distribution in season 2
+- Evaluation increased and least in A class. Probably planned by the show.
+```{r}
+t1 <- ggplot(data = pd101_s2_tbl1) +
+ geom_bar(mapping = aes (x = Judges.evaluation), color = "steelblue2")
+
+t2 <- ggplot(data = pd101_s2_tbl1) +
+ geom_bar(mapping = aes (x = Judges.evaluation.1), color = "steelblue2")
+
+grid.arrange(t1, t2, ncol=2)
+```
+
+##Ranking and judge evaluation for season 1
+- Evaluation for top 20
+- Most A's
+```{r}
+pd101_s1_tbl1 %>%
+  filter(Ranking.11>0) %>%
+  ggplot() +
+ geom_bar(mapping = aes (x = Judges.evaluation.1), color = "palevioletred1")
+```
+
+##Ranking and judge evaluation for season 2
+- Evaluation for top 20
+- Not really depend on evaluation
+```{r}
+pd101_s2_tbl1 %>%
+  filter(Ranking.11>0) %>%
+  ggplot() +
+ geom_bar(mapping = aes (x = Judges.evaluation.1), color = "steelblue2")
+```
+
+## Evaluation and traning time for season 2
+- People with high evaluation tend to have longer training time
+```{r}
+pd101_s1_height <- read_csv("pd101_heights_s1.csv")
+pd101_s2_height <- read_csv("pd101_heights.csv")
+
+pd101_s1_tbl1 <- pd101_s1_tbl1 %>% 
+  full_join(pd101_s1_height, by = "Name") %>%
+  filter(is.na(ranking_ep1) == F)
+
+pd101_s2_tbl1 <- pd101_s2_tbl1 %>% 
+  full_join(pd101_s2_height, by = "Name") %>%
+  filter(is.na(ranking_ep1) == F)
+
+pd101_s1_tbl1 <- pd101_s1_tbl1 %>%
+  mutate(Training_time = Training_time_month + Training_time_years*12)
+
+pd101_s2_tbl1 <- pd101_s2_tbl1 %>%
+  mutate(Training_time = Training_time_month + Training_time_years*12)
+
+ggplot(pd101_s1_tbl1) + 
+geom_boxplot(aes(x = evaluation1_num, y = Training_time, 
+                 group = cut_width(evaluation1_num, 1)), color = "palevioletred1")
+
+ggplot(pd101_s2_tbl1) + 
+geom_boxplot(aes(x = evaluation1_num, y = Training_time, 
+                 group = cut_width(evaluation1_num, 1)), color = "steelblue2")
+```
+
+
+## Rankings and judge evaluation
+- A(best) = 1, F(worst) = 5
+```{r}
+pd101_s1_rk <- pd101_s1_tbl1 %>% 
+  mutate(evaluation_df = evaluation2_num - evaluation1_num) %>%
+  mutate(ranking_df = ranking_ep1 - ranking_ep2)
+
+pd101_s2_rk <- pd101_s2_tbl1 %>% 
+  mutate(evaluation_df = evaluation2_num - evaluation1_num) %>%
+  mutate(ranking_df = ranking_ep1 - ranking_ep2)
+
+ggplot() +
+  geom_point(pd101_s1_rk, mapping = aes(x = evaluation_df, y = ranking_df), color = "red") 
+
+ggplot() +
+  geom_point(pd101_s2_rk, mapping = aes(x = evaluation_df, y = ranking_df), color = "blue")
+
+
+ggplot(data = pd101_s1_rk, aes(x = evaluation_df, y = ranking_df)) + 
+  geom_boxplot(color = "red", aes(group = cut_width(evaluation_df, 1)))
+
+ggplot(data = pd101_s2_rk, aes(x = evaluation_df, y = ranking_df)) + 
+  geom_boxplot(color = "blue", aes(group = cut_width(evaluation_df, 1)))
+```
+
+
+## Group by companies
+```{r}
+trainee_company_s1 <-
+  group_by(pd101_s1_tbl1, Company) %>%
+  summarise(ranking = mean(ranking), 
+            n_of_trainee = n(),
+            evaluation = mean(evaluation1_num)) %>%
+  arrange(desc(n_of_trainee))
+kable(trainee_company_s1,"html") %>%
+  scroll_box(width = "90%", height = "200px")
+
+trainee_company_s2 <-
+  group_by(pd101_s2_tbl1, Company) %>%
+  summarise(ranking = mean(ranking, na.rm = T), 
+            n_of_trainee = n(),
+            evaluation = mean(evaluation1_num)) %>%
+  arrange(desc(n_of_trainee))
+kable(trainee_company_s2,"html") %>%
+  scroll_box(width = "90%", height = "200px")
+```
+
+## Company rankings and judge evaluation
+```{r}
+trainee_company_s1_top_e1 <-
+  group_by(pd101_s1_tbl1, Company) %>%
+  summarise(ranking = mean(ranking_ep1, na.rm = T),
+            n_of_trainee = n(), 
+            evaluation = mean(evaluation1_num)) %>%
+  arrange(desc(n_of_trainee)) %>%
+  filter(n_of_trainee >= 3)
+
+trainee_company_s1_top_e2 <-
+  group_by(pd101_s1_tbl1, Company) %>%
+  summarise(ranking = mean(ranking_ep2, na.rm = T),
+            n_of_trainee = n(), 
+            evaluation = mean(evaluation2_num)) %>%
+  arrange(desc(n_of_trainee)) %>%
+  filter(n_of_trainee >= 3)
+#trainee_company_s1_top_e1
+
+trainee_company_s2_top_e1 <-
+  group_by(pd101_s2_tbl1, Company) %>%
+  summarise(ranking = mean(ranking_ep1, na.rm = T), 
+            n_of_trainee = n(),
+            evaluation = mean(evaluation1_num)) %>%
+  arrange(desc(n_of_trainee)) %>%
+  filter(n_of_trainee >= 3)
+
+trainee_company_s2_top_e2 <-
+  group_by(pd101_s2_tbl1, Company) %>%
+  summarise(ranking = mean(ranking_ep2, na.rm = T),
+            n_of_trainee = n(), 
+            evaluation = mean(evaluation2_num)) %>%
+  arrange(desc(n_of_trainee)) %>%
+  filter(n_of_trainee >= 3)
+#trainee_company_s2_top
+
+#ep1 ranking vs. evaluation
+ep1 <- ggplot() +
+  geom_point(trainee_company_s1_top_e1, mapping = aes(x = ranking, y = Company, color = evaluation), size = 4) +
+  geom_point(trainee_company_s2_top_e1, mapping = aes(x = ranking, y = Company, color = evaluation), size = 4, shape = 17)
+ep1
+
+#ep2 ranking vs. evaluation
+ep2 <- ggplot() +
+  geom_point(trainee_company_s1_top_e2, mapping = aes(x = ranking, y = Company, color = evaluation), size = 4)+
+  geom_point(trainee_company_s2_top_e2, mapping = aes(x = ranking, y = Company, color = evaluation), size = 4, shape = 17)
+ep2
+
+tracks(Episode1 = ep1, Episode2 = ep2, main = "Ranking vs. Evaluation")
+```
+
+## Company rankings and judge evaluation
+```{r}
+trainee_company_s1_top_individuals <-
+  group_by(pd101_s1_tbl1, Company) %>%
+  mutate(n_of_trainee = n()) %>%
+  filter(n_of_trainee >= 5) %>%
+  ungroup()
+
+#trainee_company_s1_top_individuals
+
+trainee_company_s2_top_individuals <-
+  group_by(pd101_s2_tbl1, Company) %>%
+  mutate(n_of_trainee = n()) %>%
+  filter(n_of_trainee >= 5) %>%
+  ungroup()
+
+#trainee_company_s2_top_individuals
+
+ggplot() +
+  geom_point(trainee_company_s1_top_individuals, mapping = aes(x = ranking, y = evaluation1_num, color = Company)) +
+  geom_point(trainee_company_s2_top_individuals, mapping = aes(x = ranking, y = evaluation1_num, color = Company), shape = 17)
+```
+
+##Height
+```{r}
+ggplot(data = pd101_s1_tbl1, mapping = aes(x = Height)) +
+  geom_histogram(bins = 5, color = "red") 
+
+ggplot(data = pd101_s2_tbl1, mapping = aes(x = Height)) +
+  geom_histogram(bins = 5, color = "blue") 
+  #geom_density()
+```
+
+##Height and ranking
+```{r}
+ggplot(data = pd101_s2_tbl1, aes(x = Height, y = ranking)) +
+  geom_point(color = "blue")
+
+ggplot(data = pd101_s2_tbl1, aes(x = Height, y = ranking)) + 
+  geom_boxplot(color = "blue", aes(group = cut_width(Height, 5, boundary = 165)))
+
+ggplot(data = pd101_s2_tbl1, aes(x = Height, y = ranking)) + 
+  geom_boxplot(color = "blue", aes(group = cut_number(Height, 5, boundary = 165)))
+```
+
+##Height, age and ranking
+```{r}
+ggplot(pd101_s2_tbl1, aes(x = Height, y = Age)) +
+  geom_tile(mapping = aes(fill = ranking_ep1))
+```
+
+##Training period
+```{r}
+ggplot(data = pd101_s2_tbl1, mapping = aes(x = Training_time)) +
+  geom_histogram(bins = 5, color = "blue") 
+
+ggplot(data = pd101_s2_tbl1, mapping = aes(x = Training_time)) +
+  geom_histogram(bins = 10, color = "blue") 
+```
+
+##Training period and ranking
+```{r}
+ggplot(data = pd101_s2_tbl1, mapping = aes(x = Training_time, y = ranking)) +
+  geom_point(color = "blue") 
+
+ggplot(data = pd101_s2_tbl1, mapping = aes(x = Training_time, y = ranking)) +
+  geom_boxplot(color = "blue", aes(group = cut_number(Training_time, 10)))
+
+ggplot(data = pd101_s2_tbl1, mapping = aes(x = Training_time, y = ranking)) +
+  geom_boxplot(color = "blue", aes(group = cut_width(Training_time, 30, boundary = 0)))
+```
+
+##When did they start training
+```{r}
+pd101_s2_tbl1 <- pd101_s2_tbl1 %>%
+  mutate(start_age = age - Training_time/12)
+
+ggplot(data = pd101_s2_tbl1, mapping = aes(x = start_age)) +
+  geom_histogram(bins = 10, color = "blue") 
+```
+
+##Age when training started and ranking
+###Generally people who started earlier have a higher rank
+```{r}
+ggplot(data = pd101_s2_tbl1, mapping = aes(x = start_age, y = ranking)) +
+  geom_point(color = "blue") 
+
+ggplot(data = pd101_s2_tbl1, mapping = aes(x =start_age, y = ranking)) +
+  geom_boxplot(color = "blue", aes(group = cut_number(start_age, 5)))
+
+ggplot(data = pd101_s2_tbl1, mapping = aes(x = start_age, y = ranking)) +
+  geom_boxplot(color = "blue", aes(group = cut_width(start_age, 5, boundary = 0)))
+```
+##Weight
+```{r}
+ggplot(data = pd101_s2_tbl1, mapping = aes(Weight)) +
+  geom_histogram(bins = 10, color = "blue") 
+
+ggplot(data = pd101_s2_tbl1, mapping = aes(x = Weight, y = Height)) +
+  geom_jitter(color = "blue") 
+```
+
+#if there's a big change between the ranking in first episode and last
+#female heights
+#if company influences ranking: both female and male ranking
+#if training time influences ranking
+#if when they started training influences ranking
+
+#ggplotly
+
+
+#slides should be self explanatory
+#put web link for produce 101, why explain
+#https://www.wattpad.com/209127413-produce-101-profiles-season-1-018-zhou-jieqiong-%E2%98%86
+
+
