@@ -35,6 +35,8 @@ library(ggvis)
 library(ggbio)
 library(knitr)
 library(kableExtra)
+library(dplyr)
+library(plotly)
 ```
 
 # Cleaning data
@@ -63,59 +65,118 @@ tbls_s2 <- webpage2 %>%
   html_table(fill = T)
 ```
 
-```{r, message=FALSE}
+#function
+```{r}
+#clean_data <- function(x)
+  
+
+```
+
+
+```{r}
 #s1
-pd101_s1_ <- tbls_2s[[1]]
-pd101_s1_$Company <- str_replace_all(pd101_s1_$Company, "[^[:ascii:]]", "") %>%
+pd101_s1_trainee <- tbls_s1[[1]]
+#clean korean characters
+pd101_s1_trainee$Company <- str_replace_all(pd101_s1_trainee$Company, "[^[:ascii:]]", "") %>%
   str_replace_all("\\(.*\\)", "")
-pd101_s1_$Name <- str_replace_all(pd101_s1_$Name, "[^[:ascii:]]", "") %>%
+pd101_s1_trainee$Name <- str_replace_all(pd101_s1_trainee$Name, "[^[:ascii:]]", "") %>%
   str_replace_all("\\(.*\\)", "") 
-pd101_s1_$Name <- gsub("[[:digit:]]", "", pd101_s1_$Name)
-names(pd101_s1_) <-  make.names(names(pd101_s1_), unique = T)
-pd101_s1_tbl1 <- 
-  filter(pd101_s1_, Age>10&Age<50) %>%
-mutate(age = type.convert(Age), 
-       ranking = type.convert(Ranking),
-       evaluation1 = type.convert(Judges.evaluation),
-       evaluation1_num = as.numeric(evaluation1),
-       evaluation2 = type.convert(Judges.evaluation.1),
-       evaluation2_num = as.numeric(evaluation2), 
-       ranking_ep1 = as.numeric(Ranking),
-       ranking_ep2 = as.numeric(Ranking.1))
-pd101_s1_tbl1 <- pd101_s1_tbl1 %>%
+pd101_s1_trainee$Name <- gsub("[[:digit:]]", "", pd101_s1_trainee$Name)
+names(pd101_s1_trainee) <-  make.names(names(pd101_s1_trainee), unique = T)
+#clean first few rows
+pd101_s1_trainee <- 
+  filter(pd101_s1_trainee, Age>10&Age<50) %>%
+#convert types
+mutate(Age = type.convert(Age), 
+       Ranking = type.convert(Ranking),
+       Judges.evaluation = type.convert(Judges.evaluation),
+       evaluation1_num = as.numeric(Judges.evaluation),
+       Judges.evaluation.1 = type.convert(Judges.evaluation.1),
+       evaluation2_num = as.numeric(Judges.evaluation.1)-1, 
+       Ranking = as.numeric(Ranking), #ep1 ranking
+       Ranking.1 = as.numeric(Ranking.1),#ep2 ranking
+       Ranking.12 = as.numeric(Ranking.12),
+       Gender = "F") 
+#delete empty space after names
+pd101_s1_trainee <- pd101_s1_trainee %>%
   mutate(Name = str_trim(Name))
+#rename variables
+colnames(pd101_s1_trainee)[colnames(pd101_s1_trainee)=="Ranking"] <- "Ranking_ep1"
+colnames(pd101_s1_trainee)[colnames(pd101_s1_trainee)=="Ranking.1"] <- "Ranking_ep2"
+colnames(pd101_s1_trainee)[colnames(pd101_s1_trainee)=="Ranking.2"] <- "Ranking_ep3"
+colnames(pd101_s1_trainee)[colnames(pd101_s1_trainee)=="Ranking.3"] <- "Ranking_ep5"
+colnames(pd101_s1_trainee)[colnames(pd101_s1_trainee)=="Ranking.4"] <- "Votes_ep5"
+colnames(pd101_s1_trainee)[colnames(pd101_s1_trainee)=="Ranking.5"] <- "Ranking_ep6"
+colnames(pd101_s1_trainee)[colnames(pd101_s1_trainee)=="Ranking.6"] <- "Ranking_ep8"
+colnames(pd101_s1_trainee)[colnames(pd101_s1_trainee)=="Ranking.7"] <- "Votes_ep8"
+colnames(pd101_s1_trainee)[colnames(pd101_s1_trainee)=="Ranking.8"] <- "Ranking_ep10"
+colnames(pd101_s1_trainee)[colnames(pd101_s1_trainee)=="Ranking.9"] <- "Votes_ep10"
+colnames(pd101_s1_trainee)[colnames(pd101_s1_trainee)=="Ranking.10"] <- "Ranking_ep11"
+colnames(pd101_s1_trainee)[colnames(pd101_s1_trainee)=="Ranking.11"] <- "Votes_ep11"
+colnames(pd101_s1_trainee)[colnames(pd101_s1_trainee)=="Ranking.12"] <- "Ranking_final"
+colnames(pd101_s1_trainee)[colnames(pd101_s1_trainee)=="Judges.evaluation"] <- "Evaluation1"
+colnames(pd101_s1_trainee)[colnames(pd101_s1_trainee)=="Judges.evaluation.1"] <- "Evaluation2"
+```
 
+```{r, message=FALSE}
 #s2
-tbl1 <- tbls_ls[[1]]
-
-tbl1$Company <- str_replace_all(tbl1$Company, "[^[:ascii:]]", "") %>%
+pd101_s2_trainee <- tbls_s2[[1]]
+#clean korean characters
+pd101_s2_trainee$Company <- str_replace_all(pd101_s2_trainee$Company, "[^[:ascii:]]", "") %>%
   str_replace_all("\\(.*\\)", "")
-tbl1$Name <- str_replace_all(tbl1$Name, "[^[:ascii:]]", "") %>%
+pd101_s2_trainee$Name <- str_replace_all(pd101_s2_trainee$Name, "[^[:ascii:]]", "") %>%
   str_replace_all("\\(.*\\)", "") 
-tbl1$Name <- gsub("[[:digit:]]", "", tbl1$Name)
-
-names(tbl1) <-  make.names(names(tbl1), unique = T)
-
-table_1 <- 
-  filter(tbl1, Age>10&Age<50)
-
-pd101_s2_tbl1 <- 
-mutate(table_1, age = type.convert(table_1$Age), 
-       ranking = type.convert(table_1$Ranking),
-       evaluation1 = type.convert(Judges.evaluation),
-       evaluation1_num = as.numeric(evaluation1),
-       evaluation2 = type.convert(Judges.evaluation.1),
-       evaluation2_num = as.numeric(evaluation2), 
-       ranking_ep1 = as.numeric(Ranking),
-       ranking_ep2 = as.numeric(Ranking.1))
-pd101_s2_tbl1 <- pd101_s2_tbl1 %>%
+pd101_s2_trainee$Name <- gsub("[[:digit:]]", "", pd101_s2_trainee$Name)
+names(pd101_s2_trainee) <-  make.names(names(pd101_s2_trainee), unique = T)
+#clean first few rows
+pd101_s2_trainee <- 
+  filter(pd101_s2_trainee, Age>10&Age<50) %>%
+#convert types
+mutate(Age = type.convert(Age), 
+       Ranking = type.convert(Ranking),
+       Judges.evaluation = type.convert(Judges.evaluation),
+       evaluation1_num = as.numeric(Judges.evaluation),
+       Judges.evaluation.1 = type.convert(Judges.evaluation.1),
+       evaluation2_num = as.numeric(Judges.evaluation.1), 
+       Ranking = as.numeric(Ranking), #ep1 ranking
+       Ranking.1 = as.numeric(Ranking.1),#ep2 ranking
+       Ranking.12 = as.numeric(Ranking.12),
+       Gender = "M") 
+#delete empty space after names
+pd101_s2_trainee <- pd101_s2_trainee %>%
   mutate(Name = str_trim(Name))
+#rename variables
+colnames(pd101_s2_trainee)[colnames(pd101_s2_trainee)=="Ranking"] <- "Ranking_ep1"
+colnames(pd101_s2_trainee)[colnames(pd101_s2_trainee)=="Ranking.1"] <- "Ranking_ep2"
+colnames(pd101_s2_trainee)[colnames(pd101_s2_trainee)=="Ranking.2"] <- "Ranking_ep3"
+colnames(pd101_s2_trainee)[colnames(pd101_s2_trainee)=="Ranking.3"] <- "Ranking_ep5"
+colnames(pd101_s2_trainee)[colnames(pd101_s2_trainee)=="Ranking.4"] <- "Votes_ep5"
+colnames(pd101_s2_trainee)[colnames(pd101_s2_trainee)=="Ranking.5"] <- "Ranking_ep6"
+colnames(pd101_s2_trainee)[colnames(pd101_s2_trainee)=="Ranking.6"] <- "Ranking_ep8"
+colnames(pd101_s2_trainee)[colnames(pd101_s2_trainee)=="Ranking.7"] <- "Votes_ep8"
+colnames(pd101_s2_trainee)[colnames(pd101_s2_trainee)=="Ranking.8"] <- "Ranking_ep10"
+colnames(pd101_s2_trainee)[colnames(pd101_s2_trainee)=="Ranking.9"] <- "Votes_ep10"
+colnames(pd101_s2_trainee)[colnames(pd101_s2_trainee)=="Ranking.10"] <- "Ranking_ep11"
+colnames(pd101_s2_trainee)[colnames(pd101_s2_trainee)=="Ranking.11"] <- "Votes_ep11"
+colnames(pd101_s2_trainee)[colnames(pd101_s2_trainee)=="Ranking.12"] <- "Ranking_final"
+colnames(pd101_s2_trainee)[colnames(pd101_s2_trainee)=="Judges.evaluation"] <- "Evaluation1"
+colnames(pd101_s2_trainee)[colnames(pd101_s2_trainee)=="Judges.evaluation.1"] <- "Evaluation2"
+```
 
-#table 2
-tbl2 <- webpage2 %>%
-  html_nodes("table")%>%
-  .[2] %>%
-  html_table(fill = TRUE)
+##Combine tables
+```{r}
+pd101_s1_heights <- read_csv("pd101_heights_s1.csv")
+pd101_s2_heights <- read_csv("pd101_heights_s2.csv")
+
+pd101_s1_trainee <- pd101_s1_trainee %>% 
+  left_join(pd101_s1_heights, by = "Name")
+
+pd101_s2_trainee <- pd101_s2_trainee %>% 
+  left_join(pd101_s2_heights, by = "Name")
+```
+
+```{r}
+df <- rbind(pd101_s1_trainee, pd101_s2_trainee)
 ```
 
 ## Data table
@@ -124,74 +185,83 @@ tbl2 <- webpage2 %>%
 - Assigned evaluation numeric values
 
 ## Data table season 1
-
 ```{r}
-kable(pd101_s1_tbl1, "html") %>%
+kable(pd101_s1_trainee, "html") %>%
   kable_styling(bootstrap_options = c("striped", "hover", "responsive")) %>%
   scroll_box(width = "90%", height = "300px")
 ```
 
-## Data table season 1
+## Data table season 2
 ```{r}
-kable(pd101_s2_tbl1, "html") %>%
+kable(pd101_s2_trainee, "html") %>%
   kable_styling(bootstrap_options = c("striped", "hover", "responsive")) %>%
   scroll_box(width = "90%", height = "300px")
 ```
 
+##Combined table
+```{r}
+kable(df, "html") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "responsive")) %>%
+  scroll_box(width = "90%", height = "300px")
+```
 
 # Analysis
 # Age of trainees
 ## Age distribution table
 - Not random
 ```{r}
-pd101_s1_tbl1 <- pd101_s1_tbl1 %>%
-  mutate(final_ranking = as.numeric(Ranking.12))
+pd101_s1_trainee %>%
+  count(cut_width(Age, 5))
 
-pd101_s2_tbl1 <- pd101_s2_tbl1 %>%
-  mutate(final_ranking = as.numeric(Ranking.12))
+pd101_s2_trainee %>%
+  count(cut_width(Age, 5))
 
-pd101_s1_tbl1 %>%
-  count(cut_width(age, 5))
-
-pd101_s2_tbl1 %>%
-  count(cut_width(age, 5))
+df %>%
+  group_by(Gender) %>%
+  summarise(mean_age = mean(Age, na.rm = T))
 ```
-## Age bar plot season 1
-- Most trainees around 20 years old.
+
+
+
 ```{r}
-ggplot(data = pd101_s1_tbl1) +
- geom_bar(mapping = aes (x = age), color = "palevioletred1")
+set.seed(100)
+d <- diamonds[sample(nrow(diamonds), 1000), ]
+
+
+p <- ggplot(data = d, aes(x = carat, y = price)) +
+  geom_point(size = 4) +
+  geom_smooth(aes(colour = cut, fill = cut)) + facet_wrap(~ cut)
+
+p <- ggplotly(p)
+p
 ```
 
-## Age bar plot season 2
-- Most trainees around 23 years old.
+
+
+
+## Age bar plot season 1&2
+- Most female trainees around 20 years old.
+- Most male trainees around 23 years old.
 ```{r}
-ggplot(data = pd101_s2_tbl1) +
- geom_bar(mapping = aes (x = age), color = "steelblue2")
+t1 <- ggplot(data = pd101_s1_trainee) +
+ geom_bar(mapping = aes (x = Age), color = "palevioletred1") 
+t1 <- ggplotly(t1)
+t2 <- ggplot(data = pd101_s2_trainee) +
+ geom_bar(mapping = aes (x = Age), color = "steelblue2")
+t2 <- ggplotly(t2)
+
+subplot(t1, t2)
 ```
+
 
 ## Age frequncy comparison
 - Age of female trainees are generally younger than male trainees.
 ```{r}
-#ggplot(data = pd101_s1_tbl1) +
-#geom_bar(mapping = aes (x = age))
-
-#ggplot(data = pd101_s2_tbl1) +
-#geom_bar(mapping = aes (x = age))
-
-pd101_s1_tbl1$season <- "season 1"
-pd101_s2_tbl1$season <- "season 2"
-
-dd <- dplyr::bind_rows(pd101_s1_tbl1[, c("age", "season")],
-              pd101_s2_tbl1[, c("age", "season")])
-
-#dd
-
-ggplot() +
-  geom_freqpoly(data = dd, mapping = aes(x = age, color = season)) 
-
-
+ggplot(df) +
+  geom_freqpoly(mapping = aes(x = Age, color = Gender)) +
+  scale_color_manual(values=c("#ff82ab", "#5cacee"))
 ```
+
 
 ## Age and ranking season 1
 - The ranking in first episode is more based on first impression while final ranking is based on viewers' holistic evaluation of a trainee.
@@ -199,13 +269,13 @@ ggplot() +
 - Left one cut by number, right one cut by age interval
 - The younger trainees' ranking tend to increase while the older trainees' ranking tend to decrease.
 ```{r, warning=F}
-t1 <- ggplot(data = pd101_s1_tbl1) + 
-  geom_boxplot(mapping = aes(x = age, y = ranking, group = cut_number(age, 5)), alpha = 0.4, color = "palevioletred1") + 
-  geom_boxplot(mapping = aes(x = age, y = final_ranking, group = cut_number(age, 5)),alpha = 0.3, color = "palevioletred4")
+t1 <- ggplot(data = pd101_s1_trainee) + 
+  geom_boxplot(mapping = aes(x = Age, y = Ranking_ep1, group = cut_number(Age, 5)), alpha = 0.4, color = "palevioletred1") + 
+  geom_boxplot(mapping = aes(x = Age, y = Ranking_final, group = cut_number(Age, 5)),alpha = 0.3, color = "palevioletred4")
 
-t2<- ggplot(data = pd101_s1_tbl1) + 
-  geom_boxplot(mapping = aes(x = age, y = ranking, group = cut_width(age, 3)), alpha = 0.4, color = "palevioletred1") + 
-  geom_boxplot(mapping = aes(x = age, y = final_ranking, group = cut_width(age, 3)),alpha = 0.3, color = "palevioletred4")
+t2<- ggplot(data = pd101_s2_trainee) + 
+  geom_boxplot(mapping = aes(x = Age, y = Ranking_ep1, group = cut_width(Age, 3)), alpha = 0.4, color = "palevioletred1") + 
+  geom_boxplot(mapping = aes(x = Age, y = Ranking_final, group = cut_width(Age, 3)),alpha = 0.3, color = "palevioletred4")
 
 grid.arrange(t1, t2, ncol=2)
 ```
@@ -301,16 +371,7 @@ pd101_s2_tbl1 %>%
 ## Evaluation and traning time for season 2
 - People with high evaluation tend to have longer training time
 ```{r}
-pd101_s1_height <- read_csv("pd101_heights_s1.csv")
-pd101_s2_height <- read_csv("pd101_heights.csv")
 
-pd101_s1_tbl1 <- pd101_s1_tbl1 %>% 
-  full_join(pd101_s1_height, by = "Name") %>%
-  filter(is.na(ranking_ep1) == F)
-
-pd101_s2_tbl1 <- pd101_s2_tbl1 %>% 
-  full_join(pd101_s2_height, by = "Name") %>%
-  filter(is.na(ranking_ep1) == F)
 
 pd101_s1_tbl1 <- pd101_s1_tbl1 %>%
   mutate(Training_time = Training_time_month + Training_time_years*12)
