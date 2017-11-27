@@ -132,15 +132,29 @@ ui <- fluidPage(
   navbarPage("Produce 101",
              navbarMenu("About",
                         tabPanel("Produce 101", 
-                                 verbatimTextOutput("Introduction"),
-                                 tags$img(src="produce101_s1_s2.jpg")
+                                 includeMarkdown("pd101_text_intro.md"),
+                                 tags$head(tags$script('
+                                var dimension = [0, 0];
+                                                       $(document).on("shiny:connected", function(e) {
+                                                       dimension[0] = window.innerWidth;
+                                                       dimension[1] = window.innerHeight;
+                                                       Shiny.onInputChange("dimension", dimension);
+                                                       });
+                                                       $(window).resize(function(e) {
+                                                       dimension[0] = window.innerWidth;
+                                                       dimension[1] = window.innerHeight;
+                                                       Shiny.onInputChange("dimension", dimension);
+                                                       });
+                                                       ')),
+                                 verbatimTextOutput("dimension_display"),
+                                 tags$img(src="produce101_s1_s2.jpg", height = input$dimension[1])
                                  ),
                         tabPanel("Videos", verbatimTextOutput("video1"),
                                  HTML('<iframe width="560" height="315" src="https://www.youtube.com/embed/BiorIyrjTHc" frameborder="0" allowfullscreen></iframe>'),
                                  verbatimTextOutput("video2"),
                                  HTML('<iframe width="560" height="315" src="https://www.youtube.com/embed/NIld_iEc67s" frameborder="0" allowfullscreen></iframe>')),
                         tabPanel("References",
-                                 verbatimTextOutput("References"))),
+                                 includeMarkdown("pd101_text_references.md"))),
              navbarMenu("Trainee Info",
                         tabPanel("Season 1 trainees",
                                  plotOutput("plot_height_age_s1", height = 500,
@@ -191,31 +205,15 @@ ui <- fluidPage(
 
 
 server <- function(input, output) {
-  #intro
-  output$Introduction <- renderText({ "Produce 101 is a korean survival reality show on Mnet. 
-It is a large-scale project in which the public (called 'national producers') \"produces\" a unit group by choosing 11 members among 101 trainees from over 50 entertainment companies.
-The show has 11 episodes.
-In the first two episodes, the trainees' are ranked by judges from A to E based on their perfromance which determines their position in the first trailor(see \"video\" tab).
-And in each episode, their ranking are calculated by votings by viewers, the bottom ones are eliminated. 
-Season 1 consist of all girls while season 2 is all boys.
-    
-My project is to explore which kind of trainees are more likely to debut." })
+  
+  output$dimension_display <- renderText({
+    paste(input$dimension[1], input$dimension[2], input$dimension[2]/input$dimension[1])
+  })
+  
+  
   #Introduction_videos
   output$video1 <- renderText({"Season 1 trailor"})
   output$video2 <- renderText({"Season 2 trailor"})
-  #Introduction_References
-  output$References <- renderText({"Data from wikipedia:
-https://en.wikipedia.org/wiki/List_of_Produce_101_contestants
-https://en.wikipedia.org/wiki/List_of_Produce_101_Season_2_contestants
-Data about height, weight and training time:
-https://www.wattpad.com/207570307-produce-101-profiles-season-1-produce-101
-https://www.kpopmap.com/produce-101-season-2-kpop-profile/
-https://www.kpopmap.com/produce-101-season-2-kpop-profile-part-2/
-Videos:
-https://www.youtube.com/watch?v=BiorIyrjTHc
-https://www.youtube.com/watch?v=NIld_iEc67s
-All published by Mnet.
-    "})
   #Trainee Info_plot
   output$plot_height_age_s1 <- renderPlot({
     ggplot(pd101_s1_height_age, aes(Age, Height)) + 
@@ -262,10 +260,10 @@ Right: distribution of age for Season 2 (male trainees).
     Average age: 21.8"})
   output$agetext2 <- renderText({"Comparison of age between female trainees and male trainees.
     - Female trainees are generally younger"})
-  output$mean1 <- renderText({paste("Average", input$var1_exp, "of female trainees: ",
-                                   mean(pd101_s1_trainee[, input$var1_exp], na.rm = T))})
-  output$mean2 <- renderText({paste("Average", input$var1_exp, "of male trainees: ",
-                                    mean(pd101_s2_trainee[, input$var1_exp], na.rm = T))})
+  output$mean1 <- renderText({paste("Average", str_to_lower(input$var1_exp, locale = "en"), "of female trainees: ",
+                                   mean(pd101_s1_trainee[, input$var1_exp]))}) #, na.rm = T
+  output$mean2 <- renderText({paste("Average", str_to_lower(input$var1_exp, locale = "en"), "of male trainees: ",
+                                    mean(pd101_s2_trainee[, input$var1_exp]))})
   output$plotage_s12 <- renderPlotly({
     p1 <- plot_ly(data = pd101_s1_trainee) %>%
       add_histogram(x = ~Age, color = ~Gender,
