@@ -1,0 +1,97 @@
+---
+title: "test_11282017_olina"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(gridExtra)
+```
+
+1. make a function. User will specify the dataframe and column. 
+Function will return statistical summary as mean, median, and quartiles (1st, 2nd, 3rd)
+
+```{r}
+#x is the dataframe, y is the column
+calculate_stat_summary <- function(x, y) {
+  mean <- mean(x[[y]], na.rm = T)
+  median <- median(x[[y]], na.rm = T)
+  qua <- quantile(x[[y]], na.rm = T)
+  tibble(Mean = mean, Median = median, "1st quartile" = qua[2],
+         "2nd quartile" = qua[3],"3rd quartile" = qua[4]
+         )
+}
+```
+
+- Give three example of use
+```{r}
+#example
+calculate_stat_summary(mtcars, "cyl")
+```
+```{r}
+calculate_stat_summary(diamonds, "carat")
+```
+
+```{r}
+calculate_stat_summary(mpg, "displ")
+```
+
+2. make a function. User will specify the data frame and column to be plotted.
+Function plots histogram and boxplot side by side for numerical values. 
+	IF columns will happen to be categorical, no plot returned. Warning is given to user
+Funcion itself returns an orginal dataframe (to be used in chaining with dplyr)
+```{r}
+plot_column <- function(x, y) {
+  if(typeof(x[[y]]) == "double"||typeof(x[[y]]) == "integer"){
+    t1 <- ggplot(x, aes(x = x[[y]])) +
+  geom_histogram() +
+    xlab(y)
+t2 <- ggplot(x, aes(x="", y = x[[y]])) +
+  geom_boxplot() +
+    ylab(y)
+grid.arrange(t1,t2,ncol=2)
+
+x
+  }
+  else{
+    warning("The column selected for plot_column() function is categorical!!")
+    x
+  }
+}
+```
+
+- Give 3 examples of use (including examples with chaining)
+```{r}
+#example of numerical column (double)
+plot_column(mpg, "displ") %>%
+  select(year)
+```
+```{r}
+#example of numerical column (int)
+plot_column(mpg, "year") 
+```
+```{r}
+#example of categorical column
+plot_column(mpg, "trans") %>%
+  select(year)
+```
+
+```{r}
+#example from another data table
+plot_column(mtcars, "mpg") %>%
+  filter(cyl == 6)
+```
+
+
+
+
+
+
+
+
+
+
