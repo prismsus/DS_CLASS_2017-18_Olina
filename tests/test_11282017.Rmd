@@ -10,6 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(ggplot2)
 library(gridExtra)
+library(stringr)
 ```
 
 1. make a function. User will specify the dataframe and column. 
@@ -45,6 +46,7 @@ Function plots histogram and boxplot side by side for numerical values.
 	IF columns will happen to be categorical, no plot returned. Warning is given to user
 Funcion itself returns an orginal dataframe (to be used in chaining with dplyr)
 ```{r}
+#x is the dataframe, y is the column
 plot_column <- function(x, y) {
   if(typeof(x[[y]]) == "double"||typeof(x[[y]]) == "integer"){
     t1 <- ggplot(x, aes(x = x[[y]])) +
@@ -86,7 +88,57 @@ plot_column(mtcars, "mpg") %>%
   filter(cyl == 6)
 ```
 
+3. Make a function. User specifies data frame, name for new column, formula for calculation of new column (as a string).
+Please use dplyr to create new column. In order to do this you will have to use the following syntax
+dataframe %>%
+  mutate(rlang::UQ(rlang::sym(new_col) := ...) 
+  For ... you need to combine two funcitons: parse and evaluate. parse(text ="string") will get formula and turn it into an expression.
+  eval will evaluate the expression 
+A lot of info here https://cran.r-project.org/web/packages/dplyr/vignettes/programming.html
+```{r}
+#x is the dataframe, y is the name for new column, ... is the formula
+calc_customized_func <- function(x, y, ...) {
+  x %>%
+  mutate(y = eval(parse(text=...)))
+}
 
+#calc_customized_func(x,y,...)
+```
+
+```{r}
+calc_customized_func(mtcars, y, "wt+qsec")
+```
+
+
+
+```{r}
+
+#> [1] "a, b, c, d, e, f, g, h, i, j"
+
+rule <- function(..., pad = "-") {
+  title <- paste0(...)
+  width <- getOption("width") - nchar(title) - 5
+  cat(title, " ", stringr::str_dup(pad, width), "\n", sep = "")
+}
+rule("Important output")
+```
+
+```{r}
+mtcars %>%
+  mutate(y = eval(parse(text="vs+am")))
+
+```
+```{r}
+calc_customized_func_ <- function(x, y, ...) {
+  df <- x %>%
+  mutate(...)
+  colnames(df)[ncol(df)] <- y
+  df
+}
+
+
+calc_customized_func_ (mtcars, "hey", vs+am)
+```
 
 
 
