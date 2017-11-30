@@ -99,46 +99,20 @@ A lot of info here https://cran.r-project.org/web/packages/dplyr/vignettes/progr
 #x is the dataframe, y is the name for new column, ... is the formula
 calc_customized_func <- function(x, y, ...) {
   x %>%
-  mutate(y = eval(parse(text=...)))
+  mutate(y = eval(parse(text=toString(...))))
 }
-
-#calc_customized_func(x,y,...)
 ```
 
 ```{r}
-calc_customized_func(mtcars, y, "wt+qsec")
+calc_customized_func(mtcars, y, "vs+am")
 ```
 
+Don't know how to use 
+dataframe %>%
+  mutate(rlang::UQ(rlang::sym(new_col) := ...) 
+It always says ":=" not found...
 
 
-```{r}
-
-#> [1] "a, b, c, d, e, f, g, h, i, j"
-
-rule <- function(..., pad = "-") {
-  title <- paste0(...)
-  width <- getOption("width") - nchar(title) - 5
-  cat(title, " ", stringr::str_dup(pad, width), "\n", sep = "")
-}
-rule("Important output")
-```
-
-```{r}
-mtcars %>%
-  mutate(y = eval(parse(text="vs+am")))
-
-```
-```{r}
-calc_customized_func_ <- function(x, y, ...) {
-  df <- x %>%
-  mutate(...)
-  colnames(df)[ncol(df)] <- y
-  df
-}
-
-
-calc_customized_func_ (mtcars, "hey", vs+am)
-```
 
 
 
