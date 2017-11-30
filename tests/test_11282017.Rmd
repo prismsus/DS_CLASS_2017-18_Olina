@@ -98,28 +98,32 @@ dataframe %>%
   eval will evaluate the expression 
 A lot of info here https://cran.r-project.org/web/packages/dplyr/vignettes/programming.html
 
-
-Too many things don't work when I try using those ↑...
-
-
 ```{r}
-calc_customized_func <- function(x, y, ...) {
-  df <- x %>%
-  mutate(...)
-  colnames(df)[ncol(df)] <- y
-  df
+calc_customized_func <- function(x, y, z){
+  #browser()
+  x %>% as_tibble() %>%
+    mutate(rlang::UQ(rlang::sym(y)) := eval(parse(text = z)))
 }
 ```
 
 ```{r}
-calc_customized_func (mtcars, "hp_wt", hp/wt) #calculate horsepower per weight
+calc_customized_func (mtcars, "hp_wt", "hp/wt") #calculate horsepower per weight
 ```
+
+
+
+
+Ignore below...
 
 ```{r}
-calc_customized_func (diamonds, "Endings", price %% 10) #get last digit of price
+calc_customized_func (diamonds[1:20,], "Endings2", "table * 10") #get last digit of price
 ```
 
-
+its still very slow...
+```{r}
+diamonds[1:10, ] %>%
+    mutate(Endings = price %% 10)
+```
 
 
 
