@@ -46,8 +46,9 @@ library(plotly)
 - https://en.wikipedia.org/wiki/List_of_Produce_101_Season_2_contestants
 - Korean TV show produce 101, seasons 1 and 2
 - Tables for overall rank & performances for different tasks
+
+##get data from web
 ```{r}
-#get data from web
 #s1
 webpage1 <- read_html("https://en.wikipedia.org/wiki/List_of_Produce_101_contestants")
 #table 1
@@ -55,7 +56,7 @@ tbls_s1 <- webpage1 %>%
   html_nodes("table")%>%
   .[1] %>%
   html_table(fill = TRUE)
-
+pd101_s1_trainee <- tbls_s1[[1]]
 #s2
 webpage2 <- read_html("https://en.wikipedia.org/wiki/List_of_Produce_101_Season_2_contestants")
 #table 1
@@ -63,74 +64,24 @@ tbls_s2 <- webpage2 %>%
   html_nodes("table")%>%
   .[1] %>%
   html_table(fill = T)
-```
-
-#function
-```{r}
-#clean_data <- function(x)
-  
-
-```
-
-
-```{r}
-#s1
-pd101_s1_trainee <- tbls_s1[[1]]
-#clean korean characters
-pd101_s1_trainee$Company <- str_replace_all(pd101_s1_trainee$Company, "[^[:ascii:]]", "") %>%
-  str_replace_all("\\(.*\\)", "")
-pd101_s1_trainee$Name <- str_replace_all(pd101_s1_trainee$Name, "[^[:ascii:]]", "") %>%
-  str_replace_all("\\(.*\\)", "") 
-pd101_s1_trainee$Name <- gsub("[[:digit:]]", "", pd101_s1_trainee$Name)
-names(pd101_s1_trainee) <-  make.names(names(pd101_s1_trainee), unique = T)
-#clean first few rows
-pd101_s1_trainee <- 
-  filter(pd101_s1_trainee, Age>10&Age<50) %>%
-#convert types
-mutate(Age = type.convert(Age), 
-       Ranking = type.convert(Ranking),
-       Judges.evaluation = type.convert(Judges.evaluation),
-       evaluation1_num = as.numeric(Judges.evaluation),
-       Judges.evaluation.1 = type.convert(Judges.evaluation.1),
-       evaluation2_num = as.numeric(Judges.evaluation.1)-1, 
-       Ranking = as.numeric(Ranking), #ep1 ranking
-       Ranking.1 = as.numeric(Ranking.1),#ep2 ranking
-       Ranking.12 = as.numeric(Ranking.12),
-       Gender = "F") 
-#delete empty space after names
-pd101_s1_trainee <- pd101_s1_trainee %>%
-  mutate(Name = str_trim(Name))
-#rename variables
-colnames(pd101_s1_trainee)[colnames(pd101_s1_trainee)=="Ranking"] <- "Ranking_ep1"
-colnames(pd101_s1_trainee)[colnames(pd101_s1_trainee)=="Ranking.1"] <- "Ranking_ep2"
-colnames(pd101_s1_trainee)[colnames(pd101_s1_trainee)=="Ranking.2"] <- "Ranking_ep3"
-colnames(pd101_s1_trainee)[colnames(pd101_s1_trainee)=="Ranking.3"] <- "Ranking_ep5"
-colnames(pd101_s1_trainee)[colnames(pd101_s1_trainee)=="Ranking.4"] <- "Votes_ep5"
-colnames(pd101_s1_trainee)[colnames(pd101_s1_trainee)=="Ranking.5"] <- "Ranking_ep6"
-colnames(pd101_s1_trainee)[colnames(pd101_s1_trainee)=="Ranking.6"] <- "Ranking_ep8"
-colnames(pd101_s1_trainee)[colnames(pd101_s1_trainee)=="Ranking.7"] <- "Votes_ep8"
-colnames(pd101_s1_trainee)[colnames(pd101_s1_trainee)=="Ranking.8"] <- "Ranking_ep10"
-colnames(pd101_s1_trainee)[colnames(pd101_s1_trainee)=="Ranking.9"] <- "Votes_ep10"
-colnames(pd101_s1_trainee)[colnames(pd101_s1_trainee)=="Ranking.10"] <- "Ranking_ep11"
-colnames(pd101_s1_trainee)[colnames(pd101_s1_trainee)=="Ranking.11"] <- "Votes_ep11"
-colnames(pd101_s1_trainee)[colnames(pd101_s1_trainee)=="Ranking.12"] <- "Ranking_final"
-colnames(pd101_s1_trainee)[colnames(pd101_s1_trainee)=="Judges.evaluation"] <- "Evaluation1"
-colnames(pd101_s1_trainee)[colnames(pd101_s1_trainee)=="Judges.evaluation.1"] <- "Evaluation2"
-```
-
-```{r, message=FALSE}
-#s2
 pd101_s2_trainee <- tbls_s2[[1]]
-#clean korean characters
-pd101_s2_trainee$Company <- str_replace_all(pd101_s2_trainee$Company, "[^[:ascii:]]", "") %>%
+```
+
+#Clean data (function)
+- Cleaned name of trainees
+- Changed type of age and ranking to integers
+- Assigned evaluation numeric values
+```{r}
+clean_data <- function(df){
+  df$Company <- str_replace_all(df$Company, "[^[:ascii:]]", "") %>%
   str_replace_all("\\(.*\\)", "")
-pd101_s2_trainee$Name <- str_replace_all(pd101_s2_trainee$Name, "[^[:ascii:]]", "") %>%
+df$Name <- str_replace_all(df$Name, "[^[:ascii:]]", "") %>%
   str_replace_all("\\(.*\\)", "") 
-pd101_s2_trainee$Name <- gsub("[[:digit:]]", "", pd101_s2_trainee$Name)
-names(pd101_s2_trainee) <-  make.names(names(pd101_s2_trainee), unique = T)
+df$Name <- gsub("[[:digit:]]", "", df$Name)
+names(df) <-  make.names(names(df), unique = T)
 #clean first few rows
-pd101_s2_trainee <- 
-  filter(pd101_s2_trainee, Age>10&Age<50) %>%
+df <- 
+  filter(df, Age>10&Age<50) %>%
 #convert types
 mutate(Age = type.convert(Age), 
        Ranking = type.convert(Ranking),
@@ -140,30 +91,44 @@ mutate(Age = type.convert(Age),
        evaluation2_num = as.numeric(Judges.evaluation.1), 
        Ranking = as.numeric(Ranking), #ep1 ranking
        Ranking.1 = as.numeric(Ranking.1),#ep2 ranking
-       Ranking.12 = as.numeric(Ranking.12),
-       Gender = "M") 
-#delete empty space after names
-pd101_s2_trainee <- pd101_s2_trainee %>%
-  mutate(Name = str_trim(Name))
+       Ranking.2 = as.numeric(Ranking.2),
+       Ranking.3 = as.numeric(Ranking.3),
+       Ranking.12 = as.numeric(Ranking.12)) %>%
+  mutate(Name = str_trim(Name)) %>%
+  mutate(Company = str_trim(Company))
 #rename variables
-colnames(pd101_s2_trainee)[colnames(pd101_s2_trainee)=="Ranking"] <- "Ranking_ep1"
-colnames(pd101_s2_trainee)[colnames(pd101_s2_trainee)=="Ranking.1"] <- "Ranking_ep2"
-colnames(pd101_s2_trainee)[colnames(pd101_s2_trainee)=="Ranking.2"] <- "Ranking_ep3"
-colnames(pd101_s2_trainee)[colnames(pd101_s2_trainee)=="Ranking.3"] <- "Ranking_ep5"
-colnames(pd101_s2_trainee)[colnames(pd101_s2_trainee)=="Ranking.4"] <- "Votes_ep5"
-colnames(pd101_s2_trainee)[colnames(pd101_s2_trainee)=="Ranking.5"] <- "Ranking_ep6"
-colnames(pd101_s2_trainee)[colnames(pd101_s2_trainee)=="Ranking.6"] <- "Ranking_ep8"
-colnames(pd101_s2_trainee)[colnames(pd101_s2_trainee)=="Ranking.7"] <- "Votes_ep8"
-colnames(pd101_s2_trainee)[colnames(pd101_s2_trainee)=="Ranking.8"] <- "Ranking_ep10"
-colnames(pd101_s2_trainee)[colnames(pd101_s2_trainee)=="Ranking.9"] <- "Votes_ep10"
-colnames(pd101_s2_trainee)[colnames(pd101_s2_trainee)=="Ranking.10"] <- "Ranking_ep11"
-colnames(pd101_s2_trainee)[colnames(pd101_s2_trainee)=="Ranking.11"] <- "Votes_ep11"
-colnames(pd101_s2_trainee)[colnames(pd101_s2_trainee)=="Ranking.12"] <- "Ranking_final"
-colnames(pd101_s2_trainee)[colnames(pd101_s2_trainee)=="Judges.evaluation"] <- "Evaluation1"
-colnames(pd101_s2_trainee)[colnames(pd101_s2_trainee)=="Judges.evaluation.1"] <- "Evaluation2"
+colnames(df)[colnames(df)=="Ranking"] <- "Ranking_ep1"
+colnames(df)[colnames(df)=="Ranking.1"] <- "Ranking_ep2"
+colnames(df)[colnames(df)=="Ranking.2"] <- "Ranking_ep3"
+colnames(df)[colnames(df)=="Ranking.3"] <- "Ranking_ep5"
+colnames(df)[colnames(df)=="Ranking.4"] <- "Votes_ep5"
+colnames(df)[colnames(df)=="Ranking.5"] <- "Ranking_ep6"
+colnames(df)[colnames(df)=="Ranking.6"] <- "Ranking_ep8"
+colnames(df)[colnames(df)=="Ranking.7"] <- "Votes_ep8"
+colnames(df)[colnames(df)=="Ranking.8"] <- "Ranking_ep10"
+colnames(df)[colnames(df)=="Ranking.9"] <- "Votes_ep10"
+colnames(df)[colnames(df)=="Ranking.10"] <- "Ranking_ep11"
+colnames(df)[colnames(df)=="Ranking.11"] <- "Votes_ep11"
+colnames(df)[colnames(df)=="Ranking.12"] <- "Ranking_final"
+colnames(df)[colnames(df)=="Judges.evaluation"] <- "Evaluation1"
+colnames(df)[colnames(df)=="Judges.evaluation.1"] <- "Evaluation2"
+  df
+}
+
+#s1
+pd101_s1_trainee <- clean_data(pd101_s1_trainee)
+pd101_s1_trainee <- pd101_s1_trainee %>%
+  mutate (Gender = "F",
+          evaluation2_num = evaluation2_num - 1)
+
+#s2
+pd101_s2_trainee <- clean_data(pd101_s2_trainee)
+pd101_s2_trainee <- pd101_s2_trainee %>%
+  mutate (Gender = "M")
 ```
 
 ##Combine tables
+- Combined tables from two seasons to one, added variable gender (F & M)
 ```{r}
 pd101_s1_heights <- read_csv("pd101_heights_s1.csv")
 pd101_s2_heights <- read_csv("pd101_heights_s2.csv")
@@ -173,267 +138,308 @@ pd101_s1_trainee <- pd101_s1_trainee %>%
 
 pd101_s2_trainee <- pd101_s2_trainee %>% 
   left_join(pd101_s2_heights, by = "Name")
-```
 
-```{r}
 df <- rbind(pd101_s1_trainee, pd101_s2_trainee)
 ```
 
-## Data table
-- Cleaned name of trainees
-- Changed type of age and ranking to integers
-- Assigned evaluation numeric values
+## Calculations
+- Calculate training time(months) from training month & year.
+```{r}
+df <- df %>%
+  mutate(Training_time = Training_time_month + Training_time_years*12,
+         Evaluation_diff = evaluation2_num - evaluation1_num)
+```
 
-## Data table season 1
+
+### Data table season 1
 ```{r}
 kable(pd101_s1_trainee, "html") %>%
   kable_styling(bootstrap_options = c("striped", "hover", "responsive")) %>%
   scroll_box(width = "90%", height = "300px")
 ```
 
-## Data table season 2
+### Data table season 2
 ```{r}
 kable(pd101_s2_trainee, "html") %>%
   kable_styling(bootstrap_options = c("striped", "hover", "responsive")) %>%
   scroll_box(width = "90%", height = "300px")
 ```
 
-##Combined table
+### Combined table
 ```{r}
 kable(df, "html") %>%
   kable_styling(bootstrap_options = c("striped", "hover", "responsive")) %>%
   scroll_box(width = "90%", height = "300px")
 ```
+t3 <- ggplot(df) +
+  geom_freqpoly(mapping = aes(x = df$pd101_s1_trainee[[rlang::UQ(rlang::sym(x))]], color = Gender)) +
+  scale_color_manual(values=c("#ff82ab", "#5cacee"))
+t3 <- ggplotly(t3)
+subplot(aa, t3, nrows = 2, margin = 0.05, heights = c(0.45, 0.55))
 
-# Analysis
-# Age of trainees
-## Age distribution table
-- Not random
+# Analysis of single variable
+## Methods
+- analyze_variable: analyze single variable. Output a list of two tables: cut the variable into 4 intervals; calculate average by gender. For example: analyze_variable("Age").
+- graph_variable: bar plot of single variable by gender, and frequncy comparison. In both ggplot and plotly. For example: graph_variable("Age").
+
 ```{r}
-pd101_s1_trainee %>%
-  count(cut_width(Age, 5))
+graph_variable <- function(x){
+t1 <- ggplot(data = pd101_s1_trainee) +
+ geom_bar(mapping = aes (x = pd101_s1_trainee[[rlang::UQ(rlang::sym(x))]]), color = "palevioletred1")
+t1 <- ggplotly(t1, xaxis = ~paste0(x, id))
+t2 <- ggplot(data = pd101_s2_trainee) +
+ geom_bar(mapping = aes (x = pd101_s2_trainee[[rlang::UQ(rlang::sym(x))]]), color = "steelblue2")
+t2 <- ggplotly(t2, xaxis = ~paste0(x, id))
+t3 <- ggplot(df) +
+  geom_freqpoly(mapping = aes(x = df[[rlang::UQ(rlang::sym(x))]], color = Gender)) +
+  scale_color_manual(values=c("#ff82ab", "#5cacee"))
+t3 <- ggplotly(t3)
+tt <- subplot(t1, t2, shareY = TRUE)
+p1 <- subplot(tt, t3, nrows = 2, margin = 0.05, heights = c(0.45, 0.55))
 
-pd101_s2_trainee %>%
-  count(cut_width(Age, 5))
 
-df %>%
+}
+graph_variable("Age")
+```
+
+
+```{r}
+analyze_variable <- function(x){
+  range <- max(df[[rlang::UQ(rlang::sym(x))]]) - min(df[[rlang::UQ(rlang::sym(x))]])
+a <- df %>%
+  count(cut_width(rlang::UQ(rlang::sym(x)), range/4))
+b <- df %>%
   group_by(Gender) %>%
-  summarise(mean_age = mean(Age, na.rm = T))
+  summarise(mean_age = mean(rlang::UQ(rlang::sym(x)), na.rm = T))
+list(a,b)
+}
+
+graph_variable <- function(x){
+t1 <- ggplot(data = pd101_s1_trainee) +
+ geom_bar(mapping = aes (x = pd101_s1_trainee[[rlang::UQ(rlang::sym(x))]]), color = "palevioletred1")
+t1 <- ggplotly(t1, xaxis = ~paste0(x, id))
+t2 <- ggplot(data = pd101_s2_trainee) +
+ geom_bar(mapping = aes (x = pd101_s2_trainee[[rlang::UQ(rlang::sym(x))]]), color = "steelblue2")
+t2 <- ggplotly(t2, xaxis = ~paste0(x, id))
+t3 <- ggplot(df) +
+  geom_freqpoly(mapping = aes(x = df[[rlang::UQ(rlang::sym(x))]], color = Gender)) +
+  scale_color_manual(values=c("#ff82ab", "#5cacee"))
+t3 <- ggplotly(t3)
+tt <- subplot(t1, t2, shareY = TRUE)
+subplot(tt, t3, nrows = 2, margin = 0.05, heights = c(0.45, 0.55))
+}
 ```
 
-
-
+## Age of trainees
+### Distribution
 ```{r}
-set.seed(100)
-d <- diamonds[sample(nrow(diamonds), 1000), ]
-
-
-p <- ggplot(data = d, aes(x = carat, y = price)) +
-  geom_point(size = 4) +
-  geom_smooth(aes(colour = cut, fill = cut)) + facet_wrap(~ cut)
-
-p <- ggplotly(p)
-p
+analyze_variable("Age")[1]
+```
+```{r}
+analyze_variable("Age")[2]
 ```
 
-
-
-
-## Age bar plot season 1&2
+### Distribution
 - Most female trainees around 20 years old.
 - Most male trainees around 23 years old.
 ```{r}
-t1 <- ggplot(data = pd101_s1_trainee) +
- geom_bar(mapping = aes (x = Age), color = "palevioletred1") 
-t1 <- ggplotly(t1)
-t2 <- ggplot(data = pd101_s2_trainee) +
- geom_bar(mapping = aes (x = Age), color = "steelblue2")
-t2 <- ggplotly(t2)
-
-subplot(t1, t2)
+graph_variable("Age")
 ```
 
-
-## Age frequncy comparison
 - Age of female trainees are generally younger than male trainees.
 ```{r}
-ggplot(df) +
+p <- ggplot(df) +
   geom_freqpoly(mapping = aes(x = Age, color = Gender)) +
   scale_color_manual(values=c("#ff82ab", "#5cacee"))
+
+ggplotly(p)
+```
+
+```{r}
+graph_variable("Training_time")
 ```
 
 
-## Age and ranking season 1
+## Age and ranking comparison
 - The ranking in first episode is more based on first impression while final ranking is based on viewers' holistic evaluation of a trainee.
 - Lighter color represents ranking in first episode, darker represents ranking in last episode
 - Left one cut by number, right one cut by age interval
 - The younger trainees' ranking tend to increase while the older trainees' ranking tend to decrease.
+
+
+- Cut by number on the left, cut by age interval on the right.
+- Girls around 20 has best ranking, while younger boys (~17) have best ranking.
+
 ```{r, warning=F}
+#season1
 t1 <- ggplot(data = pd101_s1_trainee) + 
   geom_boxplot(mapping = aes(x = Age, y = Ranking_ep1, group = cut_number(Age, 5)), alpha = 0.4, color = "palevioletred1") + 
   geom_boxplot(mapping = aes(x = Age, y = Ranking_final, group = cut_number(Age, 5)),alpha = 0.3, color = "palevioletred4")
 
-t2<- ggplot(data = pd101_s2_trainee) + 
+t2<- ggplot(data = pd101_s1_trainee) + 
   geom_boxplot(mapping = aes(x = Age, y = Ranking_ep1, group = cut_width(Age, 3)), alpha = 0.4, color = "palevioletred1") + 
   geom_boxplot(mapping = aes(x = Age, y = Ranking_final, group = cut_width(Age, 3)),alpha = 0.3, color = "palevioletred4")
 
-grid.arrange(t1, t2, ncol=2)
-```
-## Age and ranking season 1
-- The ranking in first episode is more based on first impression while final ranking is based on viewers' holistic evaluation of a trainee.
-- Lighter color represents ranking in first episode, darker represents ranking in last episode
-- Left one cut by number, right one cut by age interval
-- No patterns
-```{r}
-t1 <- ggplot(data = pd101_s2_tbl1) + 
-  geom_boxplot(mapping = aes(x = age, y = ranking, group = cut_number(age, 5)), alpha = 0.4, color = "steelblue2") + 
-  geom_boxplot(mapping = aes(x = age, y = final_ranking, group = cut_number(age, 5)),alpha = 0.3, color = "steelblue4")
+#season2
+t3 <- ggplot(data = pd101_s2_trainee) + 
+  geom_boxplot(mapping = aes(x = Age, y = Ranking_ep1, group = cut_number(Age, 5)), alpha = 0.4, color = "steelblue2") + 
+  geom_boxplot(mapping = aes(x = Age, y = Ranking_final, group = cut_number(Age, 5)),alpha = 0.3, color = "steelblue4")
 
-t2<- ggplot(data = pd101_s2_tbl1) + 
-  geom_boxplot(mapping = aes(x = age, y = ranking, group = cut_width(age, 3)), alpha = 0.4, color = "steelblue2") + 
-  geom_boxplot(mapping = aes(x = age, y = final_ranking, group = cut_width(age, 3)),alpha = 0.3, color = "steelblue4")
-
-grid.arrange(t1, t2, ncol=2)
-```
-
-## Age box plot and ranking comparison
-- Cut by number on the left, cut by age interval on the right.
-- Girls around 20 has best ranking, while younger boys (~17) have best ranking.
-```{r, warning=F}
-t1 <- ggplot(data = pd101_s1_tbl1) + 
-  geom_boxplot(mapping = aes(x = age, y = ranking, group = cut_number(age, 5)), alpha = 0.4, color = "palevioletred1") + 
-  geom_boxplot(mapping = aes(x = age, y = final_ranking, group = cut_number(age, 5)),alpha = 0.3, color = "palevioletred4")
-
-t2<- ggplot(data = pd101_s1_tbl1) + 
-  geom_boxplot(mapping = aes(x = age, y = ranking, group = cut_width(age, 3)), alpha = 0.4, color = "palevioletred1") + 
-  geom_boxplot(mapping = aes(x = age, y = final_ranking, group = cut_width(age, 3)),alpha = 0.3, color = "palevioletred4")
-
-t3 <- ggplot(data = pd101_s2_tbl1) + 
-  geom_boxplot(mapping = aes(x = age, y = ranking, group = cut_number(age, 5)), alpha = 0.4, color = "steelblue2") + 
-  geom_boxplot(mapping = aes(x = age, y = final_ranking, group = cut_number(age, 5)),alpha = 0.3, color = "steelblue4")
-
-t4 <- ggplot(data = pd101_s2_tbl1) + 
-  geom_boxplot(mapping = aes(x = age, y = ranking, group = cut_width(age, 3)), alpha = 0.4, color = "steelblue2") + 
-  geom_boxplot(mapping = aes(x = age, y = final_ranking, group = cut_width(age, 3)),alpha = 0.3, color = "steelblue4")
+t4<- ggplot(data = pd101_s2_trainee) + 
+  geom_boxplot(mapping = aes(x = Age, y = Ranking_ep1, group = cut_width(Age, 3)), alpha = 0.4, color = "steelblue2") + 
+  geom_boxplot(mapping = aes(x = Age, y = Ranking_final, group = cut_width(Age, 3)),alpha = 0.3, color = "steelblue4")
 
 grid.arrange(t1, t2, t3, t4, ncol=2)
 ```
 
 
+
+
 # Judge evaluation
-## Distribution in season 1
+## Comparison of distribution for the two rankings
 - Most people in F, least in A
 - More people in A for the second time
-```{r}
-t1 <- ggplot(data = pd101_s1_tbl1) +
- geom_bar(mapping = aes (x = Judges.evaluation), color = "palevioletred1")
-
-t2 <- pd101_s1_tbl1 %>%
-  filter(Judges.evaluation.1 == "A"|Judges.evaluation.1 == "B"|Judges.evaluation.1 == "C"|Judges.evaluation.1 == "D"|Judges.evaluation.1 == "F") %>%
-ggplot() +
- geom_bar(mapping = aes (x = Judges.evaluation.1), color = "palevioletred1")
-
-grid.arrange(t1, t2, ncol=2)
-```
 
 ## Distribution in season 2
 - Evaluation increased and least in A class. Probably planned by the show.
 ```{r}
-t1 <- ggplot(data = pd101_s2_tbl1) +
- geom_bar(mapping = aes (x = Judges.evaluation), color = "steelblue2")
-
-t2 <- ggplot(data = pd101_s2_tbl1) +
- geom_bar(mapping = aes (x = Judges.evaluation.1), color = "steelblue2")
-
-grid.arrange(t1, t2, ncol=2)
-```
-
-##Ranking and judge evaluation for season 1
-- Evaluation for top 20
-- Most A's
-```{r}
-pd101_s1_tbl1 %>%
-  filter(Ranking.11>0) %>%
+t1 <- pd101_s1_trainee %>%
+  filter(evaluation1_num>0) %>% 
   ggplot() +
- geom_bar(mapping = aes (x = Judges.evaluation.1), color = "palevioletred1")
+ geom_bar(mapping = aes (x = Evaluation1), color = "palevioletred1")
+
+t2 <- pd101_s1_trainee %>%
+  filter(evaluation2_num>0) %>% ggplot() +
+ geom_bar(mapping = aes (x = Evaluation2), color = "palevioletred1")
+
+t3 <- ggplot(data = pd101_s2_trainee) +
+ geom_bar(mapping = aes (x = Evaluation1), color = "steelblue2")
+
+t4 <- ggplot(data = pd101_s2_trainee) +
+ geom_bar(mapping = aes (x = Evaluation2), color = "steelblue2")
+
+grid.arrange(t1, t2, t3, t4, ncol=2)
 ```
 
 ##Ranking and judge evaluation for season 2
 - Evaluation for top 20
 - Not really depend on evaluation
 ```{r}
-pd101_s2_tbl1 %>%
-  filter(Ranking.11>0) %>%
-  ggplot() +
- geom_bar(mapping = aes (x = Judges.evaluation.1), color = "steelblue2")
+t1 <- pd101_s1_trainee %>%
+  filter(evaluation2_num>0) %>% 
+  filter(Ranking_ep11>0) %>%
+ggplot() +
+ geom_bar(mapping = aes (x = Evaluation2), color = "palevioletred1")
+
+t2 <- pd101_s2_trainee %>%
+  filter(evaluation2_num>0) %>% 
+  filter(Ranking_ep11>0) %>%
+ggplot() +
+ geom_bar(mapping = aes (x = Evaluation2), color = "steelblue2")
+
+grid.arrange(t1, t2, ncol=2)
 ```
 
 ## Evaluation and traning time for season 2
-- People with high evaluation tend to have longer training time
+
 ```{r}
-
-
-pd101_s1_tbl1 <- pd101_s1_tbl1 %>%
-  mutate(Training_time = Training_time_month + Training_time_years*12)
-
-pd101_s2_tbl1 <- pd101_s2_tbl1 %>%
-  mutate(Training_time = Training_time_month + Training_time_years*12)
-
-ggplot(pd101_s1_tbl1) + 
+t1 <- df %>% 
+  filter(Gender == "F") %>%
+  ggplot() + 
 geom_boxplot(aes(x = evaluation1_num, y = Training_time, 
                  group = cut_width(evaluation1_num, 1)), color = "palevioletred1")
 
-ggplot(pd101_s2_tbl1) + 
+t2 <- df %>% 
+  filter(Gender == "M") %>%
+  ggplot() + 
 geom_boxplot(aes(x = evaluation1_num, y = Training_time, 
                  group = cut_width(evaluation1_num, 1)), color = "steelblue2")
+
+grid.arrange(t1, t2, ncol=2)
 ```
 
-
 ## Rankings and judge evaluation
+- A,B,C,D,F
 - A(best) = 1, F(worst) = 5
+
 ```{r}
-pd101_s1_rk <- pd101_s1_tbl1 %>% 
-  mutate(evaluation_df = evaluation2_num - evaluation1_num) %>%
-  mutate(ranking_df = ranking_ep1 - ranking_ep2)
+t1 <- df %>% 
+  filter(Gender == "F") %>%
+  ggplot(aes(x = Ranking_ep3 - Ranking_ep1, y = Evaluation_diff)) + 
+geom_point(color = "palevioletred1") +
+  geom_smooth(method = "lm")
 
-pd101_s2_rk <- pd101_s2_tbl1 %>% 
-  mutate(evaluation_df = evaluation2_num - evaluation1_num) %>%
-  mutate(ranking_df = ranking_ep1 - ranking_ep2)
+t2 <- df %>% 
+  filter(Gender == "M") %>%
+  ggplot(aes(x = Ranking_ep3 - Ranking_ep1, y = Evaluation_diff)) + 
+geom_point(color = "steelblue2") +
+  geom_smooth(method = "lm")
 
-ggplot() +
-  geom_point(pd101_s1_rk, mapping = aes(x = evaluation_df, y = ranking_df), color = "red") 
-
-ggplot() +
-  geom_point(pd101_s2_rk, mapping = aes(x = evaluation_df, y = ranking_df), color = "blue")
-
-
-ggplot(data = pd101_s1_rk, aes(x = evaluation_df, y = ranking_df)) + 
-  geom_boxplot(color = "red", aes(group = cut_width(evaluation_df, 1)))
-
-ggplot(data = pd101_s2_rk, aes(x = evaluation_df, y = ranking_df)) + 
-  geom_boxplot(color = "blue", aes(group = cut_width(evaluation_df, 1)))
+grid.arrange(t1, t2, ncol=2)
 ```
 
 
 ## Group by companies
-```{r}
-trainee_company_s1 <-
-  group_by(pd101_s1_tbl1, Company) %>%
-  summarise(ranking = mean(ranking), 
-            n_of_trainee = n(),
-            evaluation = mean(evaluation1_num)) %>%
-  arrange(desc(n_of_trainee))
-kable(trainee_company_s1,"html") %>%
-  scroll_box(width = "90%", height = "200px")
 
-trainee_company_s2 <-
-  group_by(pd101_s2_tbl1, Company) %>%
-  summarise(ranking = mean(ranking, na.rm = T), 
-            n_of_trainee = n(),
-            evaluation = mean(evaluation1_num)) %>%
-  arrange(desc(n_of_trainee))
-kable(trainee_company_s2,"html") %>%
-  scroll_box(width = "90%", height = "200px")
+try use filter to do this...
+```{r}
+df %>%
+  group_by(Company)%>%
+  count() %>%
+  arrange(desc(n)) %>%
+  filter(n > 4) 
+
+df %>%
+  filter(Gender == "F") %>%
+  group_by(Company) %>%
+  count() %>%
+  arrange(desc(n)) 
+
+df %>%
+  filter(Gender == "M") %>%
+  group_by(Company) %>%
+  count() %>%
+  arrange(desc(n))
+
+
+a <- df %>%
+  filter(Company == "Individual Trainee"|Company =="Pledis Entertainment"|
+           #Company == "Happy Face Entertainment"|
+           Company == "Blessing Entertainment"|
+           Company == "Fantagio"|
+           Company == "Cube Entertainment"|
+           Company == "Starship Entertainment") %>%
+  group_by(Company, Gender) %>%
+  summarise(mean(Ranking_final))
+a
+  ggplot(a) +
+  geom_point(mapping = aes(x = Company, y = `mean(Ranking_final)`, color = Gender)) +
+    theme(axis.text.x = element_text(angle = 60, hjust = 1))
+
+df %>%
+  filter(Company == "Individual Trainee"|Company =="Pledis Entertainment"|
+           #Company == "Happy Face Entertainment"|
+           Company == "Blessing Entertainment"|
+           Company == "Fantagio"|
+           Company == "Cube Entertainment"|
+           Company == "Starship Entertainment") %>%
+  ggplot() +
+  geom_point(mapping = aes(x = Company, y = Ranking_final, color = Gender)) +
+    theme(axis.text.x = element_text(angle = 60, hjust = 1))
+  
+df %>%
+  filter(Company == "Individual Trainee"|Company =="Pledis Entertainment"|
+           #Company == "Happy Face Entertainment"|
+           Company == "Blessing Entertainment"|
+           Company == "Fantagio"|
+           Company == "Cube Entertainment"|
+           Company == "Starship Entertainment") %>%
+  ggplot() +
+  geom_boxplot(mapping = aes(x = Company, y = Ranking_final, color = Gender)) +
+    theme(axis.text.x = element_text(angle = 60, hjust = 1))
+
+
+  
 ```
 
 ## Company rankings and judge evaluation
@@ -602,4 +608,27 @@ ggplot(data = pd101_s2_tbl1, mapping = aes(x = Weight, y = Height)) +
 #put web link for produce 101, why explain
 #https://www.wattpad.com/209127413-produce-101-profiles-season-1-018-zhou-jieqiong-%E2%98%86
 
+```{r}
+str_to_lower("Age", locale = "en")
+```
 
+write a method for exploring simple distribution of data
+https://stackoverflow.com/questions/27773881/r-object-not-found-if-defined-within-a-function-when-using-data-table-dplyr
+```{r}
+set.seed(100)
+d <- diamonds[sample(nrow(diamonds), 1000), ]
+
+
+p <- ggplot(data = d, aes(x = carat, y = price)) +
+  geom_point(size = 4) +
+  geom_smooth(aes(colour = cut, fill = cut)) + facet_wrap(~ cut)
+
+p <- ggplotly(p)
+p
+```
+
+
+
+rlang::UQ(rlang::sym("cyl"))
+
+eval(parse(text = y))
