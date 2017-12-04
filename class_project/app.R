@@ -147,7 +147,8 @@ ui <- fluidPage(
                                                        });
                                                        ')),
                                  verbatimTextOutput("dimension_display"),
-                                 tags$img(src="produce101_s1_s2.jpg", height = input$dimension[1])
+                                 imageOutput("imagee"),
+                                 tags$img(src="produce101_s1_s2.jpg", height = 500)
                                  ),
                         tabPanel("Videos", verbatimTextOutput("video1"),
                                  HTML('<iframe width="560" height="315" src="https://www.youtube.com/embed/BiorIyrjTHc" frameborder="0" allowfullscreen></iframe>'),
@@ -209,7 +210,13 @@ server <- function(input, output) {
   output$dimension_display <- renderText({
     paste(input$dimension[1], input$dimension[2], input$dimension[2]/input$dimension[1])
   })
-  
+  output$imagee <- renderImage({
+    list(src = "www/produce101_s1_s2.jpg",
+         contentType = "image/jpg",
+         height = 500,
+         alt = "Pic"
+    )
+  })
   
   #Introduction_videos
   output$video1 <- renderText({"Season 1 trailor"})
