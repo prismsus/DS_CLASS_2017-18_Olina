@@ -6,13 +6,14 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
 ```{r}
 library(tidyverse)
 library(ggplot2)
 library(gridExtra)
 library(stringr)
 library(dplyr)
-library(data.table)
+#library(data.table)
 ```
 
 1. make a function. User will specify the dataframe and column. 
@@ -101,8 +102,11 @@ A lot of info here https://cran.r-project.org/web/packages/dplyr/vignettes/progr
 ```{r}
 calc_customized_func <- function(x, y, z){
   #browser()
+  #library(rlang)
+  library(tidyverse)
+
   x %>% as_tibble() %>%
-    mutate(rlang::UQ(rlang::sym(y)) := eval(parse(text = z)))
+    dplyr::mutate(rlang::UQ(rlang::sym(y)) := eval(parse(text = z)))
 }
 ```
 
@@ -110,10 +114,6 @@ calc_customized_func <- function(x, y, z){
 calc_customized_func (mtcars, "hp_wt", "hp/wt") #calculate horsepower per weight
 ```
 
-
-
-
-Ignore below...
 
 ```{r}
 calc_customized_func (diamonds[1:20,], "Endings2", "table * 10") #get last digit of price

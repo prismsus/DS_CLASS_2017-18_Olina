@@ -11,7 +11,7 @@ output: #md_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(cache = TRUE, message=FALSE, echo = F)
-#options(knitr.table.format = "html") 
+#options(knitr.table.format = "html")
 ```
 # Produce 101
 ## Introduction
@@ -66,6 +66,9 @@ tbls_s2 <- webpage2 %>%
   html_table(fill = T)
 pd101_s2_trainee <- tbls_s2[[1]]
 ```
+```{r}
+pd101_s2_trainee
+```
 
 #Clean data (function)
 - Cleaned name of trainees
@@ -79,21 +82,36 @@ df$Name <- str_replace_all(df$Name, "[^[:ascii:]]", "") %>%
   str_replace_all("\\(.*\\)", "") 
 df$Name <- gsub("[[:digit:]]", "", df$Name)
 names(df) <-  make.names(names(df), unique = T)
+
+df$Ranking.4 <- str_replace_all(df$Ranking.4, ",", "")
+df$Ranking.7 <- str_replace_all(df$Ranking.7, ",", "") 
+df$Ranking.9 <- str_replace_all(df$Ranking.9, ",", "")
+df$Ranking.11 <- str_replace_all(df$Ranking.11, ",", "") 
+
 #clean first few rows
 df <- 
   filter(df, Age>10&Age<50) %>%
 #convert types
 mutate(Age = type.convert(Age), 
        Ranking = type.convert(Ranking),
-       Judges.evaluation = type.convert(Judges.evaluation),
-       evaluation1_num = as.numeric(Judges.evaluation),
-       Judges.evaluation.1 = type.convert(Judges.evaluation.1),
-       evaluation2_num = as.numeric(Judges.evaluation.1), 
-       Ranking = as.numeric(Ranking), #ep1 ranking
        Ranking.1 = as.numeric(Ranking.1),#ep2 ranking
        Ranking.2 = as.numeric(Ranking.2),
        Ranking.3 = as.numeric(Ranking.3),
-       Ranking.12 = as.numeric(Ranking.12)) %>%
+      Ranking.4 = as.numeric(Ranking.4),
+       Ranking.5 = as.numeric(Ranking.5),
+       Ranking.6 = as.numeric(Ranking.6),
+       Ranking.7 = as.numeric(Ranking.7),
+       Ranking.8 = as.numeric(Ranking.8),
+       Ranking.9 = as.numeric(Ranking.9),
+       Ranking.10 = as.numeric(Ranking.10),
+       Ranking.11= as.numeric(Ranking.11),
+       Ranking.12 = as.numeric(Ranking.12),
+      
+       Judges.evaluation = type.convert(Judges.evaluation),
+       evaluation1_num = as.numeric(Judges.evaluation),
+       Judges.evaluation.1 = type.convert(Judges.evaluation.1),
+       evaluation2_num = as.numeric(Judges.evaluation.1)
+       ) %>%
   mutate(Name = str_trim(Name)) %>%
   mutate(Company = str_trim(Company))
 #rename variables
@@ -125,10 +143,12 @@ pd101_s1_trainee <- pd101_s1_trainee %>%
 pd101_s2_trainee <- clean_data(pd101_s2_trainee)
 pd101_s2_trainee <- pd101_s2_trainee %>%
   mutate (Gender = "M")
+
+pd101_s1_trainee
 ```
 
 ##Combine tables
-- Combined tables from two seasons to one, added variable gender (F & M)
+- Combine table containing info about height, weight and training time
 ```{r}
 pd101_s1_heights <- read_csv("pd101_heights_s1.csv")
 pd101_s2_heights <- read_csv("pd101_heights_s2.csv")
@@ -138,17 +158,25 @@ pd101_s1_trainee <- pd101_s1_trainee %>%
 
 pd101_s2_trainee <- pd101_s2_trainee %>% 
   left_join(pd101_s2_heights, by = "Name")
-
-df <- rbind(pd101_s1_trainee, pd101_s2_trainee)
 ```
 
 ## Calculations
 - Calculate training time(months) from training month & year.
 ```{r}
-df <- df %>%
+pd101_s1_trainee <- pd101_s1_trainee %>%
+  mutate(Training_time = Training_time_month + Training_time_years*12,
+         Evaluation_diff = evaluation2_num - evaluation1_num)
+
+pd101_s2_trainee <- pd101_s2_trainee %>%
   mutate(Training_time = Training_time_month + Training_time_years*12,
          Evaluation_diff = evaluation2_num - evaluation1_num)
 ```
+
+## Combine to one big df
+```{r}
+df <- rbind(pd101_s1_trainee, pd101_s2_trainee)
+```
+
 
 
 ### Data table season 1
@@ -171,11 +199,7 @@ kable(df, "html") %>%
   kable_styling(bootstrap_options = c("striped", "hover", "responsive")) %>%
   scroll_box(width = "90%", height = "300px")
 ```
-t3 <- ggplot(df) +
-  geom_freqpoly(mapping = aes(x = df$pd101_s1_trainee[[rlang::UQ(rlang::sym(x))]], color = Gender)) +
-  scale_color_manual(values=c("#ff82ab", "#5cacee"))
-t3 <- ggplotly(t3)
-subplot(aa, t3, nrows = 2, margin = 0.05, heights = c(0.45, 0.55))
+
 
 # Analysis of single variable
 ## Methods
@@ -183,34 +207,13 @@ subplot(aa, t3, nrows = 2, margin = 0.05, heights = c(0.45, 0.55))
 - graph_variable: bar plot of single variable by gender, and frequncy comparison. In both ggplot and plotly. For example: graph_variable("Age").
 
 ```{r}
-graph_variable <- function(x){
-t1 <- ggplot(data = pd101_s1_trainee) +
- geom_bar(mapping = aes (x = pd101_s1_trainee[[rlang::UQ(rlang::sym(x))]]), color = "palevioletred1")
-t1 <- ggplotly(t1, xaxis = ~paste0(x, id))
-t2 <- ggplot(data = pd101_s2_trainee) +
- geom_bar(mapping = aes (x = pd101_s2_trainee[[rlang::UQ(rlang::sym(x))]]), color = "steelblue2")
-t2 <- ggplotly(t2, xaxis = ~paste0(x, id))
-t3 <- ggplot(df) +
-  geom_freqpoly(mapping = aes(x = df[[rlang::UQ(rlang::sym(x))]], color = Gender)) +
-  scale_color_manual(values=c("#ff82ab", "#5cacee"))
-t3 <- ggplotly(t3)
-tt <- subplot(t1, t2, shareY = TRUE)
-p1 <- subplot(tt, t3, nrows = 2, margin = 0.05, heights = c(0.45, 0.55))
-
-
-}
-graph_variable("Age")
-```
-
-
-```{r}
 analyze_variable <- function(x){
-  range <- max(df[[rlang::UQ(rlang::sym(x))]]) - min(df[[rlang::UQ(rlang::sym(x))]])
+  range <- max(df[[rlang::UQ(rlang::sym(x))]], na.rm = T) - min(df[[rlang::UQ(rlang::sym(x))]], na.rm = T)
 a <- df %>%
   count(cut_width(rlang::UQ(rlang::sym(x)), range/4))
 b <- df %>%
   group_by(Gender) %>%
-  summarise(mean_age = mean(rlang::UQ(rlang::sym(x)), na.rm = T))
+  summarise(mean = mean(rlang::UQ(rlang::sym(x)), na.rm = T))
 list(a,b)
 }
 
@@ -223,10 +226,19 @@ t2 <- ggplot(data = pd101_s2_trainee) +
 t2 <- ggplotly(t2, xaxis = ~paste0(x, id))
 t3 <- ggplot(df) +
   geom_freqpoly(mapping = aes(x = df[[rlang::UQ(rlang::sym(x))]], color = Gender)) +
-  scale_color_manual(values=c("#ff82ab", "#5cacee"))
+  scale_color_manual(values=c("#ff82ab", "#5cacee")) +
+  xlab(x)
 t3 <- ggplotly(t3)
 tt <- subplot(t1, t2, shareY = TRUE)
-subplot(tt, t3, nrows = 2, margin = 0.05, heights = c(0.45, 0.55))
+p1 <- subplot(tt, t3, nrows = 2, margin = 0.05, heights = c(0.45, 0.55))
+p2 <- df %>%
+  ggplot(aes(cut_interval(df[[rlang::UQ(rlang::sym(x))]], 20), fill = factor(Gender))) +
+  geom_bar(position = "dodge2") +
+  scale_fill_manual(values=c("#ff82ab", "#5cacee")) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  xlab(x)
+
+list(tt,t3,p1, p2)
 }
 ```
 
@@ -239,27 +251,94 @@ analyze_variable("Age")[1]
 analyze_variable("Age")[2]
 ```
 
-### Distribution
+### Graph
 - Most female trainees around 20 years old.
 - Most male trainees around 23 years old.
+- Age of female trainees are generally younger than male trainees.
 ```{r}
 graph_variable("Age")
 ```
 
-- Age of female trainees are generally younger than male trainees.
+## Height of trainees
+### Distribution
 ```{r}
-p <- ggplot(df) +
-  geom_freqpoly(mapping = aes(x = Age, color = Gender)) +
-  scale_color_manual(values=c("#ff82ab", "#5cacee"))
-
-ggplotly(p)
+analyze_variable("Height")[1]
+```
+```{r}
+analyze_variable("Height")[2]
 ```
 
+### Graph
+```{r}
+graph_variable("Height")
+```
+
+## Weight of trainees
+### Distribution
+```{r}
+analyze_variable("Weight")[1]
+```
+```{r}
+analyze_variable("Weight")[2]
+```
+
+### Graph
+```{r}
+graph_variable("Weight")
+```
+
+## Training time of trainees
+### Distribution
+```{r}
+analyze_variable("Training_time")[1]
+```
+```{r}
+analyze_variable("Training_time")[2]
+```
+
+###Graph
 ```{r}
 graph_variable("Training_time")
 ```
 
+## Votes
+### Distribution
+```{r}
+analyze_variable("Votes_ep5")[1]
+```
+```{r}
+analyze_variable("Votes_ep5")[2]
+```
+```{r}
+graph_variable("Votes_ep5")[2]
+```
 
+Do people keep voting if their favorite trainees get eliminated?
+ - Top 60 in ep 6
+ - Top 35 in ep 10
+ - Top 20/22 in ep 11
+ Other factors that influece.
+```{r}
+# can investigate more about voting
+# how does the voting policy influence the votes
+analyze_variable("Votes_ep5")[2]
+analyze_variable("Votes_ep8")[2]
+analyze_variable("Votes_ep10")[2]
+analyze_variable("Votes_ep11")[2]
+
+graph_variable("Votes_ep11")[2]
+
+#calculate total number of votes
+
+df %>%
+  group_by(Gender) %>%
+  summarise(ep5_total = prettyNum(sum(Votes_ep5, na.rm = T),big.mark=",",scientific=FALSE),
+            ep8_total = prettyNum(sum(Votes_ep8, na.rm = T),big.mark=",",scientific=FALSE),
+            ep10_total = prettyNum(sum(Votes_ep10, na.rm = T),big.mark=",",scientific=FALSE),
+            ep11_total = prettyNum(sum(Votes_ep11, na.rm = T),big.mark=",",scientific=FALSE))
+```
+
+# Analysis of relationships
 ## Age and ranking comparison
 - The ranking in first episode is more based on first impression while final ranking is based on viewers' holistic evaluation of a trainee.
 - Lighter color represents ranking in first episode, darker represents ranking in last episode
@@ -291,8 +370,6 @@ t4<- ggplot(data = pd101_s2_trainee) +
 
 grid.arrange(t1, t2, t3, t4, ncol=2)
 ```
-
-
 
 
 # Judge evaluation
