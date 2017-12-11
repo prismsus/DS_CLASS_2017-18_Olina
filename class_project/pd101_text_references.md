@@ -16,4 +16,8 @@
 -   <https://www.youtube.com/watch?v=BiorIyrjTHc>
 -   <https://www.youtube.com/watch?v=NIld_iEc67s>
 
+#### Other information:
+
+-   <https://www.bloomberg.com/news/articles/2017-08-22/the-4-7-billion-k-pop-industry-chases-its-michael-jackson-moment>
+
 ##### All data published by Mnet.

@@ -1,22 +1,19 @@
 ### Introduction
 
-#### About the TV show
+[K-pop](https://en.wikipedia.org/wiki/K-pop) (Korean popular music) is
+becoming more and more
+[popular](http://www.bbc.com/news/entertainment-arts-39998511) in the
+recent years. For example,
+<a href="https://en.wikipedia.org/wiki/BTS_(band)">BTS</a>, a Kpop band,
+is so popular that BBC is going to make a
+[documentary](http://en.koreaportal.com/articles/43599/20171128/bbc-is-reportedly-making-special-documentary-on-k-pop-group-bts.htm)
+for them. The Kpop industry is a very big business, in Korea, in Asia,
+and now world wide, worthing $4.7 billion in the year 2016.
 
--   Produce 101 is a korean survival reality show on Mnet.
--   It is a large-scale project in which the public (called 'national
-    producers') "produces" a unit group by choosing 11 members among 101
-    trainees from over 50 entertainment companies.
--   The show has 11 episodes.
--   In the first two episodes, the trainees' are ranked by judges from A
-    to E based on their perfromance which determines their position in
-    the first trailor(see "video" tab). And in each episode, their
-    ranking are calculated by votings by viewers, the bottom ones are
-    eliminated.
--   Season 1 consist of all girls while season 2 is all boys.
+-   Big entertainment companies like SM, JYP, and Starship train
+    trainees and debut them to make profit.
 
-#### About the project
-
--   My project is to explore which kind of trainees are more likely to
-    debut.
--   In this shiny app, users can explore data by interactive graphs and
-    tables
+-   The boy group, [Wanna
+    One](https://www.billboard.com/articles/columns/k-town/7897154/produce-101-k-pop-boy-band-wanna-one),
+    recenly debutted from the second season of a korean show called
+    Produce 101, is also making a huge influence in the world.

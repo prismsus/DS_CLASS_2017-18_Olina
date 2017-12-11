@@ -1,17 +1,23 @@
 ---
 title: "Produce 101 seasons 1 & 2 data analysis"
-author: Olina Liang
-date: October 19, 2017
-output: #md_document
-  ioslides_presentation:
-    widescreen: true
-    smaller: true
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+  
 ---
 
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(cache = TRUE, message=FALSE, echo = F)
 #options(knitr.table.format = "html")
+# ioslides_presentation:
+#     widescreen: true
+#     smaller: true
+#date: October 19, 2017
+#author: Olina Liang
+#question, obtaining data, exploration, modeling, conclusion
+#html, slides, shiny
 ```
 # Produce 101
 ## Introduction
@@ -318,7 +324,7 @@ Do people keep voting if their favorite trainees get eliminated?
  - Top 35 in ep 10
  - Top 20/22 in ep 11
  Other factors that influece.
-```{r}
+```{r, eval=F}
 # can investigate more about voting
 # how does the voting policy influence the votes
 analyze_variable("Votes_ep5")[2]
@@ -520,7 +526,7 @@ df %>%
 ```
 
 ## Company rankings and judge evaluation
-```{r}
+```{r, eval=F}
 trainee_company_s1_top_e1 <-
   group_by(pd101_s1_tbl1, Company) %>%
   summarise(ranking = mean(ranking_ep1, na.rm = T),
@@ -571,7 +577,7 @@ tracks(Episode1 = ep1, Episode2 = ep2, main = "Ranking vs. Evaluation")
 ```
 
 ## Company rankings and judge evaluation
-```{r}
+```{r, eval=F}
 trainee_company_s1_top_individuals <-
   group_by(pd101_s1_tbl1, Company) %>%
   mutate(n_of_trainee = n()) %>%
@@ -593,18 +599,10 @@ ggplot() +
   geom_point(trainee_company_s2_top_individuals, mapping = aes(x = ranking, y = evaluation1_num, color = Company), shape = 17)
 ```
 
-##Height
-```{r}
-ggplot(data = pd101_s1_tbl1, mapping = aes(x = Height)) +
-  geom_histogram(bins = 5, color = "red") 
 
-ggplot(data = pd101_s2_tbl1, mapping = aes(x = Height)) +
-  geom_histogram(bins = 5, color = "blue") 
-  #geom_density()
-```
 
 ##Height and ranking
-```{r}
+```{r, eval=F}
 ggplot(data = pd101_s2_tbl1, aes(x = Height, y = ranking)) +
   geom_point(color = "blue")
 
@@ -616,13 +614,13 @@ ggplot(data = pd101_s2_tbl1, aes(x = Height, y = ranking)) +
 ```
 
 ##Height, age and ranking
-```{r}
+```{r, eval=F}
 ggplot(pd101_s2_tbl1, aes(x = Height, y = Age)) +
   geom_tile(mapping = aes(fill = ranking_ep1))
 ```
 
 ##Training period
-```{r}
+```{r, eval=F}
 ggplot(data = pd101_s2_tbl1, mapping = aes(x = Training_time)) +
   geom_histogram(bins = 5, color = "blue") 
 
@@ -631,7 +629,7 @@ ggplot(data = pd101_s2_tbl1, mapping = aes(x = Training_time)) +
 ```
 
 ##Training period and ranking
-```{r}
+```{r, eval=F}
 ggplot(data = pd101_s2_tbl1, mapping = aes(x = Training_time, y = ranking)) +
   geom_point(color = "blue") 
 
@@ -643,7 +641,7 @@ ggplot(data = pd101_s2_tbl1, mapping = aes(x = Training_time, y = ranking)) +
 ```
 
 ##When did they start training
-```{r}
+```{r, eval=F}
 pd101_s2_tbl1 <- pd101_s2_tbl1 %>%
   mutate(start_age = age - Training_time/12)
 
@@ -653,7 +651,7 @@ ggplot(data = pd101_s2_tbl1, mapping = aes(x = start_age)) +
 
 ##Age when training started and ranking
 ###Generally people who started earlier have a higher rank
-```{r}
+```{r, eval=F}
 ggplot(data = pd101_s2_tbl1, mapping = aes(x = start_age, y = ranking)) +
   geom_point(color = "blue") 
 
@@ -664,7 +662,7 @@ ggplot(data = pd101_s2_tbl1, mapping = aes(x = start_age, y = ranking)) +
   geom_boxplot(color = "blue", aes(group = cut_width(start_age, 5, boundary = 0)))
 ```
 ##Weight
-```{r}
+```{r, eval=F}
 ggplot(data = pd101_s2_tbl1, mapping = aes(Weight)) +
   geom_histogram(bins = 10, color = "blue") 
 
@@ -685,13 +683,13 @@ ggplot(data = pd101_s2_tbl1, mapping = aes(x = Weight, y = Height)) +
 #put web link for produce 101, why explain
 #https://www.wattpad.com/209127413-produce-101-profiles-season-1-018-zhou-jieqiong-%E2%98%86
 
-```{r}
+```{r, eval=F}
 str_to_lower("Age", locale = "en")
 ```
 
 write a method for exploring simple distribution of data
 https://stackoverflow.com/questions/27773881/r-object-not-found-if-defined-within-a-function-when-using-data-table-dplyr
-```{r}
+```{r, eval=F}
 set.seed(100)
 d <- diamonds[sample(nrow(diamonds), 1000), ]
 
