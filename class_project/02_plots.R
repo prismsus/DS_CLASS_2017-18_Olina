@@ -74,12 +74,19 @@ output$exploreplot1 <- renderPlotly({
 })
 
 output$exploreplot3 <- renderPlot({
-  ggplot(df, aes(Age, df[, input$var1_exp2])) +
-    geom_boxplot(aes(group = cut_width(
-      Age, (range(Age)[2] - range(Age)[1]) / as.numeric(input$binnum_exp2)
-    ))) +
-    facet_wrap( ~ as.factor(Gender), nrow = 1) +
-    ylab(input$var1_exp2)
+  if(is.integer(type.convert(input$bin_exp2)))
+    ggplot(df, aes(Age, df[, input$var1_exp2], color = Gender)) +
+      geom_boxplot(aes(group = cut_interval(Age, as.numeric(input$bin_exp2)))) +
+      facet_wrap( ~ as.factor(Gender), nrow = 1) +
+      ylab(input$var1_exp2) +
+    scale_color_manual(values = c("#ff82ab", "#5cacee"))
+  else 
+    ggplot(df, aes(Age, df[, input$var1_exp2], color = Gender)) +
+         geom_boxplot(aes(group = cut_interval(Age, 5))) +
+         facet_wrap( ~ as.factor(Gender), nrow = 1) +
+         ylab(input$var1_exp2) +
+    scale_color_manual(values = c("#ff82ab", "#5cacee"))
+
 })
 
 output$exploreplot2 <- renderPlot({

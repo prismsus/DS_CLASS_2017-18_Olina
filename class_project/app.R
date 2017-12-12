@@ -1,87 +1,81 @@
-#look at nas for girl height n stuff
-
-library(shiny)
-library(ggplot2)
-library(readxl)
-library(rvest)
-library(tidyverse)
-library(gridExtra)
-library(stringr)
-library(plotly)
-library(DT)
-
-## 
-
+source("00_libraries.R", local = T)
 source("01_clean_data.R", local = T)
+options(spinner.color.background="#F5F5F5")
 
-ui <- fluidPage(navbarPage(
-  h2(
-    "Produce 101",
-    style = "font-family: 'Lobster', cursive;
-    font-weight: 500; line-height: 0.7;
-    color: #505050;"
-  ),
-  navbarMenu(
-    h4(
-      "About",
+ui <- fluidPage(
+  
+  navbarPage(  
+    h2(
+      "Produce 101",
       style = "font-family: 'Lobster', cursive;
-      font-weight: 500; line-height: 1.1;
+      font-weight: 500; line-height: 0.7;
       color: #505050;"
     ),
-    tabPanel(
-      h5(
-        "The website",
-        style = "font-family: 'Didot', cursive;
-        font-weight: 500; line-height: 0.5; color: #505050;"
-      ),
-      tags$img(src = "produce101_s1_s2_long.jpg", height = 180),
-      h1(" "),
-      includeMarkdown("pd101_text_intro_2.md")
+  
+navbarMenu(
+  h4(
+    "About",
+    style = "font-family: 'Lobster', cursive;
+    font-weight: 500; line-height: 1.1;
+    color: #505050;"
+  ),
+  tabPanel(
+    h5(
+      "The website",
+      style = "font-family: 'Didot', cursive;
+      font-weight: 500; line-height: 0.5; color: #505050;"
     ),
-    tabPanel(
-      h5(
-        "Kpop",
-        style = "font-family: 'Didot', cursive;
-        font-weight: 500; line-height: 0.5; color: #505050;"
-      ),
-      includeMarkdown("pd101_text_intro.md"),
-      tags$img(src = "Kpop_Logos.jpg", height = 380)
+    tags$img(src = "produce101_s1_s2_long.jpg", height = 180),
+    h1(" "),
+    includeMarkdown("pd101_text_intro_2.md")
+  ),
+  tabPanel(
+    h5(
+      "Kpop",
+      style = "font-family: 'Didot', cursive;
+      font-weight: 500; line-height: 0.5; color: #505050;"
     ),
-    tabPanel(
-      h5(
-        "Produce 101",
-        style = "font-family: 'Didot', cursive;
-        font-weight: 500; line-height: 0.5; color: #505050;"
-      ),
-      includeMarkdown("pd101_text_intro_3.md"),
-      tags$img(src = "produce101_s1_s2.jpg", height = 500)
+    includeMarkdown("pd101_text_intro.md"),
+    tags$img(src = "Kpop_Logos.jpg", height = 380)
+  ),
+  tabPanel(
+    h5(
+      "Produce 101",
+      style = "font-family: 'Didot', cursive;
+      font-weight: 500; line-height: 0.5; color: #505050;"
     ),
-    tabPanel(
-      h5(
-        "Videos",
-        style = "font-family: 'Didot', cursive;
-        font-weight: 500; line-height: 0.5; color: #505050;"
-      ),
-      verbatimTextOutput("video1"),
-      HTML(
-        '<iframe width="560" height="315" src="https://www.youtube.com/embed/BiorIyrjTHc" frameborder="0" allowfullscreen></iframe>'
-      ),
-      verbatimTextOutput("video2"),
-      HTML(
-        '<iframe width="560" height="315" src="https://www.youtube.com/embed/NIld_iEc67s" frameborder="0" allowfullscreen></iframe>'
-      )
+    includeMarkdown("pd101_text_intro_3.md"),
+    tags$img(src = "produce101_s1_s2.jpg", height = 500)
+  ),
+  tabPanel(
+    h5(
+      "Videos",
+      style = "font-family: 'Didot', cursive;
+      font-weight: 500; line-height: 0.5; color: #505050;"
     ),
-    tabPanel(
-      h5(
-        "References",
-        style = "font-family: 'Didot', cursive;
-        font-weight: 500; line-height: 0.5; color: #505050;"
-      ),
-      includeMarkdown("pd101_text_references.md"),
-      h1(" "),
-      tags$img(src = "produce101_s1_s2_long_.jpg", height = 200)
+    verbatimTextOutput("video1"),
+    HTML(
+      '<iframe width="560" height="315" src="https://www.youtube.com/embed/BiorIyrjTHc" frameborder="0" allowfullscreen></iframe>'
+    ),
+    verbatimTextOutput("video2"),
+    HTML(
+      '<iframe width="560" height="315" src="https://www.youtube.com/embed/NIld_iEc67s" frameborder="0" allowfullscreen></iframe>'
     )
   ),
+  tabPanel(
+    h5(
+      "References",
+      style = "font-family: 'Didot', cursive;
+      font-weight: 500; line-height: 0.5; color: #505050;"
+    ),
+    includeMarkdown("pd101_text_references.md"),
+    h1(" "),
+    tags$img(src = "produce101_s1_s2_long_.jpg", height = 200)
+  )
+),
+
+#source("02_webpage1.R", local = T),
+
   navbarMenu(
     h4(
       "Trainee Info",
@@ -129,6 +123,8 @@ ui <- fluidPage(navbarPage(
       DT::dataTableOutput("df")
     )
   ),
+
+
   #buttons, get variable
   #https://rstudio.github.io/DT/003-tabletools-buttons.html
   navbarMenu(
@@ -147,15 +143,16 @@ ui <- fluidPage(navbarPage(
       ),
       selectInput("var1_exp", "Choose variable",
                   names(df)[c(3, 22, 25, 26)]),
-      plotlyOutput("exploreplot1"),
+      
+      withSpinner(plotlyOutput(paste0("exploreplot1")),type=7),
+      
       verbatimTextOutput("mean1"),
       verbatimTextOutput("mean2"),
       
       selectInput("var1_exp2", "Choose variable",
                   names(df)[c(22, 25, 26)]),
-      selectInput("binnum_exp2", "Choose number of bins",
-                  c(1, 2, 3)),
-      plotOutput("exploreplot3")
+      textInput("bin_exp2", "Number of boxes", value = "5", width = NULL, placeholder = NULL),
+      withSpinner(plotOutput(paste0("exploreplot3")),type=7)
       
       #selectInput("var2_exp", "Choose x variable",
       #names(df)),
@@ -191,19 +188,6 @@ ui <- fluidPage(navbarPage(
 
 
 server <- function(input, output) {
-  output$dimension_display <- renderText({
-    paste(input$dimension[1],
-          input$dimension[2],
-          input$dimension[2] / input$dimension[1])
-  })
-  output$imagee <- renderImage({
-    list(
-      src = "www/produce101_s1_s2.jpg",
-      contentType = "image/jpg",
-      height = 500,
-      alt = "Pic"
-    )
-  })
   
   #Introduction_videos
   output$video1 <- renderText({
@@ -277,3 +261,8 @@ server <- function(input, output) {
 
 # Run the application
 shinyApp(ui = ui, server = server)
+
+#look at standard fonts chrome/safari have...
+#user enter equation
+#delete click for graphs
+#seperate into r files

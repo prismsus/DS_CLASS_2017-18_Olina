@@ -163,4 +163,3 @@ pd101_s1_height_age <- pd101_s1_trainee %>%
   select(Name, Company, Age, Height, Ranking_final, Evaluation1)
 pd101_s2_height_age <- pd101_s2_trainee %>%
   select(Name, Company, Age, Height, Ranking_final, Evaluation1)
-
