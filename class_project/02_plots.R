@@ -1,15 +1,3 @@
-output$agetext1 <-
-  renderText({
-    "Left: distribution of age for Season 1 (female trainees).
-    Average age: 19.5
-    Right: distribution of age for Season 2 (male trainees).
-    Average age: 21.8"
-  })
-output$agetext2 <-
-  renderText({
-    "Comparison of age between female trainees and male trainees.
-    - Female trainees are generally younger"
-  })
 output$mean1 <-
   renderText({
     paste(
@@ -28,23 +16,6 @@ output$mean2 <-
       mean(pd101_s2_trainee[, input$var1_exp])
     )
   })
-output$plotage_s12 <- renderPlotly({
-  p1 <- plot_ly(data = pd101_s1_trainee) %>%
-    add_histogram(
-      x = ~ Age,
-      color = ~ Gender,
-      mode = "markers",
-      marker = list(color = "#ff82ab")
-    )
-  p2 <- plot_ly(data = pd101_s2_trainee) %>%
-    add_histogram(
-      x = ~ Age,
-      color = ~ Gender,
-      mode = "markers",
-      marker = list(color = "#5cacee")
-    )
-  subplot(p1, p2)
-})
 output$exploreplot1 <- renderPlotly({
   p1 <-
     plot_ly(
@@ -72,35 +43,53 @@ output$exploreplot1 <- renderPlotly({
   subplot(p1, p2)
   #https://plot.ly/ipython-notebooks/color-scales/
 })
+output$warning <- renderText({
+  if((!is.null(input$vars))&&(!is.na(input$vars[2]))){
+    if(is.integer(type.convert(input$bin_exp2))&&as.numeric(input$bin_exp2)>0){
+      paste("")
+    }
+    else{
+      paste("Default graph displayed, please input a positive integer for \"number of boxes\".")
+    }
+  }
+    else
+    {
+      paste("Default graph displayed, please choose two variables.")
+    }
+})
+output$exploreplot2 <- renderPlot({
+  if((!is.null(input$vars))&&(!is.na(input$vars[2]))){
+    if(is.integer(type.convert(input$bin_exp2))&&as.numeric(input$bin_exp2)>0){
+      ggplot(df, aes(df[, input$vars[1]], df[, input$vars[2]], color = Gender)) +
+      geom_boxplot(aes(group = cut_interval(df[, input$vars[1]], as.numeric(input$bin_exp2)))) +
+      facet_wrap( ~ as.factor(Gender), nrow = 1) +
+      ylab(input$vars[2]) +
+      xlab(input$vars[1]) +
+      scale_color_manual(values = c("#ff82ab", "#5cacee"))
+    }
+    else
+    {
+      ggplot(df, aes(df[, input$vars[1]], df[, input$vars[2]], color = Gender)) +
+      geom_boxplot(aes(group = cut_interval(df[, input$vars[1]], 5))) +
+      facet_wrap( ~ as.factor(Gender), nrow = 1) +
+      ylab(input$vars[2]) +
+      xlab(input$vars[1]) +
+      scale_color_manual(values = c("#ff82ab", "#5cacee"))
+    }
+  }
+  else
+  {
+    #h4("Default graph displayed")
+    ggplot(df, aes(Age, Weight, color = Gender)) +
+      geom_boxplot(aes(group = cut_interval(Age, 5))) +
+      facet_wrap( ~ as.factor(Gender), nrow = 1) +
+      ylab("Weight") +
+      xlab("Age") +
+      scale_color_manual(values = c("#ff82ab", "#5cacee"))
+  }
+})
 
 output$exploreplot3 <- renderPlot({
-  if(is.integer(type.convert(input$bin_exp2)))
-    ggplot(df, aes(Age, df[, input$var1_exp2], color = Gender)) +
-      geom_boxplot(aes(group = cut_interval(Age, as.numeric(input$bin_exp2)))) +
-      facet_wrap( ~ as.factor(Gender), nrow = 1) +
-      ylab(input$var1_exp2) +
-    scale_color_manual(values = c("#ff82ab", "#5cacee"))
-  else 
-    ggplot(df, aes(Age, df[, input$var1_exp2], color = Gender)) +
-         geom_boxplot(aes(group = cut_interval(Age, 5))) +
-         facet_wrap( ~ as.factor(Gender), nrow = 1) +
-         ylab(input$var1_exp2) +
-    scale_color_manual(values = c("#ff82ab", "#5cacee"))
-
-})
-
-output$exploreplot2 <- renderPlot({
-  plot_ly(df, x = ~ df[, input$var2_exp], y = ~ df[, input$var3_exp])
-  #+
-  #geom_jitter(aes(color = Gender))
-  #+
-  #xlab(input$var2_exp) +
-  #ylab(input$var3_exp) +
-  #scale_color_manual(values=c("#ff82ab", "#5cacee"))
-})
-
-output$plotage <- renderPlot({
-  ggplot(df) +
-    geom_freqpoly(mapping = aes(x = Age, color = Gender)) +
-    scale_color_manual(values = c("#ff82ab", "#5cacee"))
+  ggplot(df, aes(Age, Weight, color = Gender)) +
+    geom_boxplot(aes(group = cut_interval(Age, 5)))
 })

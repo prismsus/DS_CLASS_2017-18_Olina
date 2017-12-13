@@ -5,27 +5,16 @@ options(spinner.color.background="#F5F5F5")
 ui <- fluidPage(
   
   navbarPage(  
-    h2(
-      "Produce 101",
-      style = "font-family: 'Lobster', cursive;
-      font-weight: 500; line-height: 0.7;
-      color: #505050;"
-    ),
-  
-navbarMenu(
-  h4(
-    "About",
-    style = "font-family: 'Lobster', cursive;
-    font-weight: 500; line-height: 1.1;
-    color: #505050;"
-  ),
+    h2("Produce 101", style = "font-family: 'Lobster', cursive;
+      font-weight: 500; line-height: 0.7; color: #505050;"),
+  navbarMenu(
+  h4("About", style = "font-family: 'Lobster', cursive;
+    font-weight: 500; line-height: 1.1; color: #505050;"),
   tabPanel(
-    h5(
-      "The website",
-      style = "font-family: 'Didot', cursive;
-      font-weight: 500; line-height: 0.5; color: #505050;"
-    ),
-    tags$img(src = "produce101_s1_s2_long.jpg", height = 180),
+    h5("The website", style = "font-family: 'Didot', cursive;
+      font-weight: 500; line-height: 0.5; color: #505050;"),
+    #tags$img(src = "produce101_s1_s2_long.jpg", height = 180),
+    HTML('<center><img src="produce101_s1_s2_long.jpg" width="1000"></center>'),
     h1(" "),
     includeMarkdown("pd101_text_intro_2.md")
   ),
@@ -77,41 +66,43 @@ navbarMenu(
 #source("02_webpage1.R", local = T),
 
   navbarMenu(
-    h4(
-      "Trainee Info",
-      style = "font-family: 'Lobster', cursive;
-      font-weight: 500; line-height: 1.1;color: #505050;"
-    ),
+    h4("Trainee Info",style = "font-family: 'Lobster', cursive;
+      font-weight: 500; line-height: 1.1;color: #505050;"),
+    
+    #trial
+    
     tabPanel(
-      h5(
-        "Season 1 trainees",
-        style = "font-family: 'Didot', cursive;
-        font-weight: 500; line-height: 0.7; color: #505050;"
-      ),
-      plotOutput(
-        "plot_height_age_s1",
-        height = 500,
-        click = "plot1_click",
-        brush = brushOpts(id = "plot1_brush")
-      ),
-      verbatimTextOutput("click_info_s1"),
-      verbatimTextOutput("brush_info_s1"),
-      DT::dataTableOutput("pd101_s1_trainee")
+      h5("Season 1 trainees",style = "font-family: 'Didot', cursive;
+        font-weight: 500; line-height: 0.7; color: #505050;"),
+      tabPanel(
+        h5("Single variable", style = "font-family: 'Didot', cursive;
+           font-weight: 500; line-height: 0.6; color: #505050;"),
+        
+        plotOutput(
+          "plot_height_age_s1",
+          width = 600,
+          height = 400,
+          brush = brushOpts(id = "plot1_brush")
+        ),
+        verbatimTextOutput("brush_info_s1"),
+        h1( ),
+        DT::dataTableOutput("pd101_s1_trainee")
+        )
     ),
+    
+    #trial
+    
     tabPanel(
-      h5(
-        "Season 2 trainees",
-        style = "font-family: 'Didot', cursive;
-        font-weight: 500; line-height: 0.7; color: #505050;"
-      ),
+      h5("Season 2 trainees",style = "font-family: 'Didot', cursive;
+        font-weight: 500; line-height: 0.7; color: #505050;"),
       plotOutput(
         "plot_height_age_s2",
-        height = 500,
-        click = "plot1_click",
+        width = 600,
+        height = 400,
         brush = brushOpts(id = "plot1_brush")
       ),
-      verbatimTextOutput("click_info_s2"),
       verbatimTextOutput("brush_info_s2"),
+      h1(),
       DT::dataTableOutput("pd101_s2_trainee")
     ),
     tabPanel(
@@ -128,62 +119,66 @@ navbarMenu(
   #buttons, get variable
   #https://rstudio.github.io/DT/003-tabletools-buttons.html
   navbarMenu(
-    h4(
-      "Data",
-      style = "font-family: 'Lobster', cursive;
-      font-weight: 500; line-height: 1.1;
-      color: #505050;"
-    ),
+    h4("Explore",style = "font-family: 'Lobster', cursive;
+      font-weight: 500; line-height: 1.1; color: #505050;"),
+    
     tabPanel(
-      h5(
-        "Explore",
-        style = "font-family: 'Didot', cursive;
-        font-weight: 500; line-height: 0.6;
-        color: #505050;"
-      ),
-      selectInput("var1_exp", "Choose variable",
-                  names(df)[c(3, 22, 25, 26)]),
-      
-      withSpinner(plotlyOutput(paste0("exploreplot1")),type=7),
-      
-      verbatimTextOutput("mean1"),
-      verbatimTextOutput("mean2"),
-      
-      selectInput("var1_exp2", "Choose variable",
-                  names(df)[c(22, 25, 26)]),
-      textInput("bin_exp2", "Number of boxes", value = "5", width = NULL, placeholder = NULL),
-      withSpinner(plotOutput(paste0("exploreplot3")),type=7)
-      
-      #selectInput("var2_exp", "Choose x variable",
-      #names(df)),
-      #selectInput("var3_exp", "Choose y variable",
-      #names(df)), plotlyOutput("exploreplot2")
-      
-      
+      h5("Single variable", style = "font-family: 'Didot', cursive;
+        font-weight: 500; line-height: 0.6; color: #505050;"),
+      sidebarLayout(
+        sidebarPanel(
+          selectInput("var1_exp", "Choose variable",
+                      names(df)[c(3,22, 25, 26)])
+        ),
+        mainPanel(
+          withSpinner(plotlyOutput(paste0("exploreplot1")),type=7),
+          verbatimTextOutput("mean1"),
+          verbatimTextOutput("mean2")
+        )
+      )
     ),
+    
     #http://rstudio.github.io/shiny/tutorial/#building-inputs
-    #display average
     tabPanel(
-      h5("Age", style = "font-family: 'Didot', cursive; font-weight: 500; line-height: 0.6;
+      h5("Correlations", style = "font-family: 'Didot', cursive; font-weight: 500; line-height: 0.6;
          color: #505050;"),
-      verbatimTextOutput("agetext1"),
-      plotlyOutput("plotage_s12"),
-      verbatimTextOutput("agetext2"),
-      plotOutput("plotage")
+      sidebarLayout(
+        sidebarPanel(
+          selectizeInput("vars", "Choose x and y variables", names(df)[c(3,4,5,6,22,25,26)], 
+                         selected = NULL, multiple = FALSE,
+                         options = list(maxItems = 2, placeholder = 'Please select')),
+          #https://deanattali.com/blog/advanced-shiny-tips/
+          textInput("bin_exp2", "Number of boxes", value = "5", width = NULL, placeholder = NULL)
+        ),
+        mainPanel(
+          verbatimTextOutput("warning"),
+          withSpinner(plotOutput(paste0("exploreplot2")),type=7)
+        )
+      )
     ),
     tabPanel(
-      h5("Height", style = "font-family: 'Didot', cursive; font-weight: 500; line-height: 0.6;
-         color: #505050;")
-    ),
-    tabPanel(
-      h5("Training length", style = "font-family: 'Didot', cursive; font-weight: 500; line-height: 0.6;
-         color: #505050;")
+      h5("Customize graph", style = "font-family: 'Didot', cursive; font-weight: 500; line-height: 0.6;
+         color: #505050;"),
+      
+      sidebarLayout(
+        sidebarPanel(
+          selectInput("exp3_var1", "Choose x variable",names(df)),
+          selectInput("exp3_var2", "Choose y variable",names(df)),
+          checkboxGroupInput("icons", "Choose icons:",
+                             choiceNames =
+                               list(icon("calendar"), icon("bed"),
+                                    icon("cog"), icon("bug")),
+                             choiceValues =
+                               list("calendar", "bed", "cog", "bug")
+          )
+        ),
+        #x&y, plot type, cuztomize, equation, model, filter
+        mainPanel(
+          plotOutput("exploreplot3")
+        )
+      )
     )
   )
-  # h4("sdfsdf")
-  # h2("sdfsdf")
-  # tags$li("sdf")
-  # includeMarkdown()
 ))
 
 
@@ -201,9 +196,6 @@ server <- function(input, output) {
     ggplot(pd101_s1_height_age, aes(Age, Height)) +
       geom_hex(aes(color = Ranking_final))
   })
-  output$click_info_s1 <- renderPrint({
-    nearPoints(pd101_s1_height_age, input$plot1_click, addDist = TRUE)
-  })
   output$brush_info_s1 <- renderPrint({
     brushedPoints(pd101_s1_height_age,
                   input$plot1_brush)
@@ -211,9 +203,6 @@ server <- function(input, output) {
   output$plot_height_age_s2 <- renderPlot({
     ggplot(pd101_s2_height_age, aes(Age, Height)) +
       geom_hex(aes(color = Ranking_final))
-  })
-  output$click_info_s2 <- renderPrint({
-    nearPoints(pd101_s2_height_age, input$plot1_click, addDist = TRUE)
   })
   output$brush_info_s2 <- renderPrint({
     brushedPoints(pd101_s2_height_age,
@@ -266,3 +255,6 @@ shinyApp(ui = ui, server = server)
 #user enter equation
 #delete click for graphs
 #seperate into r files
+#add description of variables
+#add more variables in explore
+#https://shiny.rstudio.com/articles/layout-guide.html

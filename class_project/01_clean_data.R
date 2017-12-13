@@ -160,6 +160,7 @@ pd101_s2_trainee <- pd101_s2_trainee %>%
 df <- rbind(pd101_s1_trainee, pd101_s2_trainee)
 
 pd101_s1_height_age <- pd101_s1_trainee %>%
-  select(Name, Company, Age, Height, Ranking_final, Evaluation1)
+  select(Name, Company, Ranking_final, Age, Height)
+#, , Evaluation1
 pd101_s2_height_age <- pd101_s2_trainee %>%
   select(Name, Company, Age, Height, Ranking_final, Evaluation1)
