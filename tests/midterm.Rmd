@@ -1,0 +1,120 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+
+# 1) Get data
+- http://archive.ics.uci.edu/ml/datasets/Energy+efficiency#
+
+```{r}
+library(readxl)
+library(dplyr)
+library(ggplot2)
+library(tidyverse)
+library(modelr)
+```
+```{r}
+building_data <- read_excel("ENB2012_data.xlsx")
+building_data
+```
+- About the data:
+X1	Relative Compactness 
+X2	Surface Area 
+X3	Wall Area 
+X4	Roof Area 
+X5	Overall Height 
+X6	Orientation 
+X7	Glazing Area 
+X8	Glazing Area Distribution 
+y1	Heating Load 
+y2	Cooling Load
+
+
+# 2)Separate to train and test set.
+- 80% train, rest 20% test.
+```{r}
+b_train <- building_data %>%
+  sample_frac(.8)
+
+b_test <- setdiff(building_data, b_train)
+```
+
+# 3) Make a linear model to predict Heating Load
+- Linear model according to the eight attributes
+- Two boxplots visualize and compare data(black) and model(red)
+```{r}
+mod_1 <- lm(Y1 ~ X1 + X2 + X3 + X4 + X5 + X6 + X7 + X8, data = b_train)
+
+grid_1 <- b_train %>% 
+  #data_grid(b_train, X6) %>% 
+  add_predictions(mod_1, "pred_Y1")
+  
+ggplot(b_train, aes(x = X6, y = Y1, group = cut_interval(X6,4))) +
+  geom_boxplot() +
+  scale_x_continuous(breaks=c(1,2,3,4,5)) +
+  geom_boxplot(data = grid_1, aes(x = X6, y = pred_Y1), colour = "red", alpha = 0.5)
+
+ggplot(b_train, aes(x = X8, y = Y1, group = cut_interval(X8,6))) +
+  geom_boxplot() +
+  scale_x_continuous(breaks=c(0,1,2,3,4,5,6)) +
+  geom_boxplot(data = grid_1, aes(x = X8, y = pred_Y1, group = cut_interval(X8,6)), colour = "red", alpha = 0.5)
+```
+
+# 4) Evaluate:
+- What can you tell about the model? How reliable it is?
+- Which parameters are statistically significant?
+- Which parameters are the most influential?
+```{r}
+summary(mod_1)
+```
+```{r}
+plot(mod_1)
+```
+- The model has a R-squared of 0.9208, and p-value < 2.2e-16, so its pretty reliable.
+- X1, X2, X3, X5, X6, X7 and X8 are statistically significant. Which are Relative Compactness, Surface Area, Wall Area, Overall Height, Orientation and Glazing Area Distribution.
+- In those attributes, X1, X5, X7 (Relative Compactness, Overall Height & Glazing Area) are the most influencial, with very high estimate values.
+
+#5) New features creation:
+- Create new variables like Roof/Wall Area, Volume, etc.
+- Do a model now. Evaluate
+- New var: X4(Roof Area) * X5(Overall Height), which should be approximately the volume of the room.
+- Graph comparing data(black) and prediction(red). Heating load predicted by room volume.
+```{r}
+b_train_vol <- b_train %>%
+  mutate(X9 = X4*X5)
+mod_2 <- lm(Y1 ~ X9, data = b_train_vol)
+
+grid_3 <- b_train_vol %>% 
+  data_grid(b_train_vol, X9) %>% 
+  add_predictions(mod_2, "pred_Y1")
+
+ggplot(b_train_vol, aes(x = X9, y = Y1, group = cut(X9, breaks=c(0, 800, 900)))) +
+  geom_boxplot(alpha = 0.5) +
+  geom_point(data = grid_3, aes(y = pred_Y1), color = "red", alpha = 0.5, size = 5)
+```
+```{r}
+summary(mod_2)
+```
+- The variable is statistically significant(***), but there's a low r square(~0.4). We can also see from the graph that the prediction for heating load is higher than reality for two groups on the side but very low for the middle group. The prediction is not reliable.
+
+# 6) Interpretation:
+- If you increase each of 3 the most important parameters by 1 unit, how much heating load is increasing?
+```{r}
+summary(mod_1)
+```
+- If we increase relative compactness by 1, the heating load would decrease by -63.6(BTHU/Sqr ft). Increase overall height by 1 meter, the heating load increase by 3.77. Increase glazing area by 1 square meter, heating load would increase 19.88.
+
+#7) Test:
+- Compare prediction of your model on test set with what actually is in test set.
+- The residual is graphed below. There's no left pattern and points distribute equally above and below zero by the values are pretty big. Thus the model is reliable to some extend...
+```{r}
+pre <- b_test %>% 
+  add_predictions(mod_1, "pred_Y1") %>%
+  mutate(res = Y1 - pred_Y1)
+ggplot(data = pre, aes(x = Y1, y = res)) +
+  geom_point()
+```
+You may consider to calculate R2 between predicted and actual values (manual coding of steps to obtain R2 may be needed in this case).
+Ok I don't have time to do this...
