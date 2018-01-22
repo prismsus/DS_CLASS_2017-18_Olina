@@ -44,7 +44,30 @@ pd101_s1_trainee <-
     Ranking.1 = as.numeric(Ranking.1),
     #ep2 ranking
     Ranking.12 = as.numeric(Ranking.12),
-    Gender = "F"
+    Gender = "F",
+    
+    
+    ####delete
+    Ranking.2 = as.numeric(Ranking.2),
+    Ranking.3 = as.numeric(Ranking.3),
+    
+    Ranking.4 = str_replace_all(Ranking.4, ",",""),
+    Ranking.4 = as.numeric(Ranking.4),
+    Ranking.7 = str_replace_all(Ranking.7, ",",""),
+    Ranking.7 = as.numeric(Ranking.7),
+    Ranking.9 = str_replace_all(Ranking.9, ",",""),
+    Ranking.9 = as.numeric(Ranking.9),
+    Ranking.11 = str_replace_all(Ranking.11, ",",""),
+    Ranking.11 = as.numeric(Ranking.11),
+    
+    Ranking.5 = as.numeric(Ranking.5),
+    Ranking.6 = as.numeric(Ranking.6),
+    Ranking.7 = as.numeric(Ranking.7),
+    Ranking.8 = as.numeric(Ranking.8),
+    Ranking.9 = as.numeric(Ranking.9),
+    Ranking.10 = as.numeric(Ranking.10),
+    Ranking.11 = as.numeric(Ranking.11)
+    ####delete
   )
 #delete empty space after names
 pd101_s1_trainee <- pd101_s1_trainee %>%
@@ -109,7 +132,27 @@ pd101_s2_trainee <-
     Ranking.1 = as.numeric(Ranking.1),
     #ep2 ranking
     Ranking.12 = as.numeric(Ranking.12),
-    Gender = "M"
+    Gender = "M",
+    
+    Ranking.2 = as.numeric(Ranking.2),
+    Ranking.3 = as.numeric(Ranking.3),
+    Ranking.4 = str_replace_all(Ranking.4, ",",""),
+    Ranking.4 = as.numeric(Ranking.4),
+    Ranking.7 = str_replace_all(Ranking.7, ",",""),
+    Ranking.7 = as.numeric(Ranking.7),
+    Ranking.9 = str_replace_all(Ranking.9, ",",""),
+    Ranking.9 = as.numeric(Ranking.9),
+    Ranking.11 = str_replace_all(Ranking.11, ",",""),
+    Ranking.11 = as.numeric(Ranking.11),
+    
+    
+    Ranking.5 = as.numeric(Ranking.5),
+    Ranking.6 = as.numeric(Ranking.6),
+    Ranking.7 = as.numeric(Ranking.7),
+    Ranking.8 = as.numeric(Ranking.8),
+    Ranking.9 = as.numeric(Ranking.9),
+    Ranking.10 = as.numeric(Ranking.10),
+    Ranking.11 = as.numeric(Ranking.11)
   )
 
 #delete empty space after names

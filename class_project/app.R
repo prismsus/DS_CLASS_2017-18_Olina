@@ -68,46 +68,44 @@ ui <- fluidPage(
   navbarMenu(
     h4("Trainee Info",style = "font-family: 'Lobster', cursive;
       font-weight: 500; line-height: 1.1;color: #505050;"),
-    
-    #trial
-    
     tabPanel(
       h5("Season 1 trainees",style = "font-family: 'Didot', cursive;
         font-weight: 500; line-height: 0.7; color: #505050;"),
+      h5("Brush a point to see trainee's information."),
       tabPanel(
         h5("Single variable", style = "font-family: 'Didot', cursive;
            font-weight: 500; line-height: 0.6; color: #505050;"),
-        
-        plotOutput(
-          "plot_height_age_s1",
-          width = 600,
-          height = 400,
-          brush = brushOpts(id = "plot1_brush")
+        fluidRow(
+          column(12, align="center",
+                 plotOutput("plot_height_age_s1", width = 600, height = 400,
+                            brush = brushOpts(id = "plot1_brush"))
+          )
         ),
+        hr(),
         verbatimTextOutput("brush_info_s1"),
         h1( ),
         DT::dataTableOutput("pd101_s1_trainee")
         )
-    ),
-    
-    #trial
+      ),
     
     tabPanel(
       h5("Season 2 trainees",style = "font-family: 'Didot', cursive;
         font-weight: 500; line-height: 0.7; color: #505050;"),
-      plotOutput(
-        "plot_height_age_s2",
-        width = 600,
-        height = 400,
-        brush = brushOpts(id = "plot1_brush")
+      h5("Brush a point to see trainee's information."),
+      fluidRow(
+        column(12, align="center",
+               plotOutput("plot_height_age_s2", width = 600, height = 400,
+                          brush = brushOpts(id = "plot2_brush"))
+        )
       ),
+      hr(),
       verbatimTextOutput("brush_info_s2"),
       h1(),
       DT::dataTableOutput("pd101_s2_trainee")
     ),
     tabPanel(
       h5(
-        "Full trainee list",
+        "Full data table(download)",
         style = "font-family: 'Didot', cursive;
         font-weight: 500; line-height: 0.7; color: #505050;"
       ),
@@ -127,7 +125,7 @@ ui <- fluidPage(
         font-weight: 500; line-height: 0.6; color: #505050;"),
       sidebarLayout(
         sidebarPanel(
-          selectInput("var1_exp", "Choose variable",
+          selectInput("var1_exp", "Choose variable (x-axis)",
                       names(df)[c(3,22, 25, 26)])
         ),
         mainPanel(
@@ -162,18 +160,19 @@ ui <- fluidPage(
       
       sidebarLayout(
         sidebarPanel(
-          selectInput("exp3_var1", "Choose x variable",names(df)),
-          selectInput("exp3_var2", "Choose y variable",names(df)),
-          checkboxGroupInput("icons", "Choose icons:",
+          selectInput("graphtype", "Choose graph type",c("Scatter plot", "Boxplot")),
+          selectInput("exp3_var1", "Choose x variable",names(df)[c(3,6:20,22,25,26)]),
+          selectInput("exp3_var2", "Choose y variable",names(df)[c(3,6:20,22,25,26)]),
+          checkboxGroupInput("g_options", "",
                              choiceNames =
-                               list(icon("calendar"), icon("bed"),
-                                    icon("cog"), icon("bug")),
+                               list("Linear model", "Seperated by gender"),
                              choiceValues =
-                               list("calendar", "bed", "cog", "bug")
+                               list("lm", "sg")
           )
         ),
         #x&y, plot type, cuztomize, equation, model, filter
         mainPanel(
+          verbatimTextOutput("error_plot3"),
           plotOutput("exploreplot3")
         )
       )
@@ -206,7 +205,7 @@ server <- function(input, output) {
   })
   output$brush_info_s2 <- renderPrint({
     brushedPoints(pd101_s2_height_age,
-                  input$plot1_brush)
+                  input$plot2_brush)
   })
   #Trainee info_tables
   output$pd101_s1_trainee <- DT::renderDataTable({
@@ -258,3 +257,6 @@ shinyApp(ui = ui, server = server)
 #add description of variables
 #add more variables in explore
 #https://shiny.rstudio.com/articles/layout-guide.html
+
+
+#filter data

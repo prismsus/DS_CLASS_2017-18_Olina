@@ -19,7 +19,14 @@
 -   Trainee info tab  
     - Season 1 trainees: information table of season 1  
     - Season 2 trainees: information table of season 2  
-    - Full trainee list: full data table for exploration and download  
--   Data tab  
-    - Explore: For user to manipulate the graphs of data  
-    - Others: My exploration of data presented
+    - Full data table: full trainee list and their information for
+    exploration and download  
+-   Explore tab  
+    - Single variable: Average age, height, weight and training time for
+    trainees by gender  
+    - Correlations: Correlation bewteen two variables (among age,
+    evaluation1&2, ranking, height, weight, training time) presented in
+    boxplot and grouped by gender  
+    - Customize graph: Users can explore all data by choosing graph type
+    (scatterplot/boxplot), x and y variables, whether to seperate by
+    gender or whether to add linear model

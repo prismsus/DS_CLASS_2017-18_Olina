@@ -19,3 +19,4 @@ knitr
 kableExtra
 plotly
 bindrcpp
+modelr
