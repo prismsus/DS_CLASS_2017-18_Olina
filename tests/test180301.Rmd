@@ -1,0 +1,154 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+Data Science test
+
+#Libraries
+```{r}
+library(ggplot2)
+library(modelr)
+library(caret)
+library(nycflights13)
+library(dplyr)
+```
+
+#Dataset
+*) Start with this data set nycflights13::flights
+```{r}
+flights
+```
+
+#weatherData
+*) Use weather data from nycflights13::weather
+- Combine tables
+- Remove nas
+```{r}
+dt <- flights %>%
+  left_join(weather%>%
+              select(temp:time_hour), by = "time_hour") %>%
+  filter(is.na(arr_delay) == F)
+
+dt <- dt[complete.cases(dt), ]
+```
+
+#Seperate data
+*) Separate data to training and test
+```{r}
+# 80% of the sample size
+smp_size <- floor(0.8 * nrow(dt))
+
+set.seed(123)
+train_ind <- sample(seq_len(nrow(dt)), size = smp_size)
+
+dt_train <- dt[train_ind, ]
+dt_test <- dt[-train_ind, ]
+```
+
+```{r}
+#remove outliers?
+#quantile(dt_train$arr_time, 0.95)
+#dt_train <- dt_train %>% 
+#  filter(arr_time < quantile(dt_train$arr_time, 0.95))
+```
+
+#Linear model
+*) Do linear model to predict departute delay
+*) This may require creation of new variables, and use of variable selection (either with caret, or by other means)
+```{r}
+lm <- lm(dep_delay ~ carrier + distance + air_time + temp + dewp + humid + wind_dir + wind_speed + precip + visib, data = dt_train)
+summary(lm)
+```
+
+```{r}
+plot(lm)
+```
+
+*) Evaluate model performance. Would you trust it
+- Using the test set, number of observations that are in the predicted confidence interval(0.95) and not in.
+```{r}
+dt_test <- dt_test %>%  
+  mutate(pre_lw = predict(lm, dt_test, interval="predict")[,2]) %>%
+  mutate(pred_hgh = predict(lm, dt_test, interval="predict")[,3]) %>%
+  mutate(IN = (dep_delay >= pre_lw & dep_delay <= pred_hgh))
+```
+```{r}
+dt_test %>% 
+  group_by(IN) %>%
+  summarise(n())
+```
+- Seems to work well but actually the range of prediction are really big and similar the model is not reallt helpful...
+
+#Caret
+```{r}
+preProcValues <- preProcess(dt_train, method = c("center", "scale"))
+
+trainTransformed <- predict(preProcValues, dt_train)
+testTransformed <- predict(preProcValues, dt_test)
+```
+
+```{r}
+fitControl <- trainControl(## 10-fold CV
+                           method = "cv",
+                           number = 10
+                           ## repeated ten times
+                           #repeats = 10
+                           )
+```
+
+
+## KNN
+```{r}
+
+KnnGrid <-  expand.grid(k = 1:100)
+
+
+FitKnn <- train(dep_delay ~ carrier + distance + air_time + temp + dewp + humid + wind_dir + wind_speed + precip + visib, data = trainTransformed, 
+                na.action=na.exclude,
+                 method = "knn", 
+                 trControl = fitControl,
+                 verbose = FALSE, 
+                 tuneGrid = KnnGrid)
+FitKnn
+summary(FitKnn)
+plot(FitKnn)
+
+
+FitKnn$bestTune
+caret::RMSE(pred = predict(FitKnn, testTransformed), 
+            obs = testTransformed$dep_delay)
+caret::R2(pred = predict(FitKnn, testTransformed), 
+            obs = testTransformed$dep_delay)
+
+KnnGrid3 <-  expand.grid(k = 3)
+FitKnn3 <- train(dep_delay ~ ., data = trainTransformed, 
+                 method = "knn", 
+                 trControl = fitControl,
+                 verbose = FALSE, 
+                 tuneGrid = KnnGrid3)
+caret::R2(pred = predict(FitKnn3, testTransformed), 
+            obs = testTransformed$dep_delay)
+```
+
+##Linear model
+```{r}
+FitLm <- train(dep_delay ~ carrier + distance + air_time + temp + dewp + humid + wind_dir + wind_speed + precip + visib, data = trainTransformed,
+                 method = "glm", 
+                 trControl = fitControl
+                )
+FitLm
+summary(FitLm)
+str(FitLm)
+summary(FitLm$finalModel)
+
+FitLm$results$Rsquared
+FitLm$results$RsquaredSD
+
+FitLm$bestTune
+
+caret::R2(pred = predict(FitLm, testTransformed), 
+            obs = testTransformed$dep_delay)
+
+#plot(FitLm)
+```
+- The R2 for test set is 0.0299369 which is also pretty low... So the model is not really useful.
