@@ -77,9 +77,16 @@ dt_test %>%
   group_by(IN) %>%
   summarise(n())
 ```
-- Seems to work well but actually the range of prediction are really big and similar the model is not reallt helpful...
+- Seems to work well but actually the range of prediction are really big and similar the model is not really helpful...
 
 #Caret
+- because it is so slow for it to run on the entire dataset, I chose 10,000 data for training and testing.
+```{r}
+dt_train <- dt_train[1:10000,]
+dt_test <- dt_train[1:10000,]
+```
+
+##Pre-Processing
 ```{r}
 preProcValues <- preProcess(dt_train, method = c("center", "scale"))
 
@@ -99,12 +106,10 @@ fitControl <- trainControl(## 10-fold CV
 
 ## KNN
 ```{r}
-
-KnnGrid <-  expand.grid(k = 1:100)
+KnnGrid <-  expand.grid(k = 50:80) #to save some time...
 
 
 FitKnn <- train(dep_delay ~ carrier + distance + air_time + temp + dewp + humid + wind_dir + wind_speed + precip + visib, data = trainTransformed, 
-                na.action=na.exclude,
                  method = "knn", 
                  trControl = fitControl,
                  verbose = FALSE, 
@@ -115,20 +120,21 @@ plot(FitKnn)
 
 
 FitKnn$bestTune
-caret::RMSE(pred = predict(FitKnn, testTransformed), 
-            obs = testTransformed$dep_delay)
-caret::R2(pred = predict(FitKnn, testTransformed), 
-            obs = testTransformed$dep_delay)
-
-KnnGrid3 <-  expand.grid(k = 3)
-FitKnn3 <- train(dep_delay ~ ., data = trainTransformed, 
-                 method = "knn", 
-                 trControl = fitControl,
-                 verbose = FALSE, 
-                 tuneGrid = KnnGrid3)
-caret::R2(pred = predict(FitKnn3, testTransformed), 
-            obs = testTransformed$dep_delay)
+ caret::RMSE(pred = predict(FitKnn, testTransformed), 
+             obs = testTransformed$dep_delay)
+ caret::R2(pred = predict(FitKnn, testTransformed), 
+             obs = testTransformed$dep_delay)
+# 
+# KnnGrid3 <-  expand.grid(k = 3)
+# FitKnn3 <- train(dep_delay ~ ., data = trainTransformed, 
+#                  method = "knn", 
+#                  trControl = fitControl,
+#                  verbose = FALSE, 
+#                  tuneGrid = KnnGrid3)
+# caret::R2(pred = predict(FitKnn3, testTransformed), 
+#             obs = testTransformed$dep_delay)
 ```
+- R2 0.07095668... Not reliable. But higher than linear model.
 
 ##Linear model
 ```{r}
@@ -151,4 +157,4 @@ caret::R2(pred = predict(FitLm, testTransformed),
 
 #plot(FitLm)
 ```
-- The R2 for test set is 0.0299369 which is also pretty low... So the model is not really useful.
+- The R2 for test set is 0.0407938 which is also pretty low...
