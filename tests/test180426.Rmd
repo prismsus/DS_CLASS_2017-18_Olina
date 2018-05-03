@@ -1,0 +1,321 @@
+---
+title: "test180426"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Libraries
+```{r}
+dyn.load('/Library/Java/JavaVirtualMachines/jdk1.8.0_144.jdk/Contents/Home/jre/lib/server/libjvm.dylib')
+library(readr)
+library(tm)
+library(qdap)
+library(tidyverse)
+library(caret)
+library(stringr)
+```
+
+#Data
+- Data about text people send. Contains two colomns. One with the actual text and the other with 
+##Import data
+```{r, warning = F}
+text <- read_csv("text_train.csv")
+```
+
+##Find important terms
+```{r}
+texts <- text$V2
+data_c <- VCorpus(VectorSource(texts)) #Volatile (stored in RAM memory) Corpus - VCorpus
+data_c
+qview(data_c)
+processed_c <- data_c
+dtm <- DocumentTermMatrix(processed_c)
+#findFreqTerms(dtm, 200, 30000)
+dtm_small <- removeSparseTerms(dtm, 0.98)
+df_1n <- as_tibble(as.matrix(dtm_small)) 
+colnames(df_1n)
+```
+
+##Clean data
+```{r}
+text <- text%>%
+  mutate(V2 = str_replace_all(V2, "&lt;", ""))
+```
+
+##Create variables
+```{r}
+modified_text <- text %>%
+  mutate(n_of_words = lengths(gregexpr("\\W+", V2)) + 1) %>%
+  mutate(n_of_sym_exc = str_count(V2, "!")) %>%
+  mutate(n_of_sym_n = str_count(V2, "&")) %>%
+  mutate(n_of_sym_sing = str_count(V2, "\'")) %>%
+  mutate(n_of_sym_dbl = str_count(V2, "\"")) %>%
+  mutate(n_of_num = str_count(V2, "\\d+")) %>%
+  
+  mutate(n_of_caps = str_count(V2, "\\b[A-Z]{2,}\\b")) %>%
+  mutate(ratio_of_caps = n_of_caps/n_of_words) %>%
+  mutate(V2 = str_to_lower(V2, locale = "en")) %>%
+  
+  mutate(n_of_w_about = str_count(V2, "about")) %>%
+  mutate(n_of_w_all = str_count(V2, "all")) %>%
+  mutate(n_of_w_and = str_count(V2, "and")) %>%
+  mutate(n_of_w_any = str_count(V2, "any")) %>%
+  mutate(n_of_w_are = str_count(V2, "are")) %>%
+  mutate(n_of_w_but = str_count(V2, "but")) %>%
+  mutate(n_of_w_call = str_count(V2, "call")) %>%
+  mutate(n_of_w_can = str_count(V2, "can")) %>%
+  mutate(n_of_w_come = str_count(V2, "come")) %>%
+  mutate(n_of_w_dont = str_count(V2, "dont")) %>%
+  mutate(n_of_w_for = str_count(V2, "for")) %>%
+  mutate(n_of_w_for = str_count(V2, "free")) %>%
+  mutate(n_of_w_from = str_count(V2, "from")) %>%
+  mutate(n_of_w_get = str_count(V2, "get")) %>%
+  mutate(n_of_w_have = str_count(V2, "have")) %>%
+  mutate(n_of_w_how = str_count(V2, "how")) %>%
+  mutate(n_of_w_ill = str_count(V2, "i'll")) %>%
+  mutate(n_of_w_im = str_count(V2, "i'm")) %>%
+  mutate(n_of_w_its = str_count(V2, "its")) %>%
+  mutate(n_of_w_love = str_count(V2, "love")) %>%
+  mutate(n_of_w_just = str_count(V2, "just")) %>%
+  mutate(n_of_w_not = str_count(V2, "not")) %>%
+  mutate(n_of_w_now = str_count(V2, "now")) %>%
+  mutate(n_of_w_our = str_count(V2, "our")) %>%
+  mutate(n_of_w_out = str_count(V2, "out")) %>%
+  mutate(n_of_w_txt = str_count(V2, "please")) %>%
+  mutate(n_of_w_txt = str_count(V2, "txt")) %>%
+  mutate(n_of_w_txt = str_count(V2, "reply")) %>%
+  mutate(n_of_w_txt = str_count(V2, "send")) %>%
+  
+  select(-V2, -n_of_caps)
+```
+
+##Split data
+```{r}
+set.seed(825)
+inTraining <- createDataPartition(modified_text$V1, p = .8, list = FALSE)
+training <- modified_text[ inTraining,]
+testing  <- modified_text[-inTraining,]
+```
+
+#Modles
+##gbm 
+###Model
+```{r}
+fitControl <- trainControl(## 10-fold CV
+                           method = "repeatedcv",
+                           number = 10,
+                           ## repeated ten times
+                           repeats = 10)
+```
+```{r}
+set.seed(825)
+gbmFit <- train(V1 ~ ., data = training, 
+                 method = "gbm", 
+                 trControl = fitControl,
+                 ## This last option is actually one
+                 ## for gbm() that passes through
+                 verbose = FALSE)
+gbmFit
+```
+```{r}
+confusionMatrix(gbmFit)
+```
+
+###ROC curve
+- Threshold: 0.785
+```{r}
+#  predict probabilities
+trainPred <- predict(gbmFit, training, type = "prob")
+library(pROC)
+rocCurve <- roc(response = training$V1,
+                    predictor = trainPred[, "ham"])
+plot(rocCurve, print.thres = "best") 
+rocCurve$thresholds[which(max(rocCurve$sensitivities + rocCurve$specificities) == 
+                      rocCurve$sensitivities + rocCurve$specificities)]
+
+```
+
+###Result of testing set
+- 95.5%
+```{r}
+a <- predict(gbmFit, testing, type = "prob")
+preddt <- cbind(testing, a) %>%
+  mutate(Result = ifelse(ham > 0.7853132, "ham", "spam")) %>%
+  mutate(Acc = ifelse(Result == V1, T, F))
+
+preddt %>%
+  group_by(Acc) %>%
+  summarise(n())
+```
+```{r}
+851/(891)
+```
+
+##svmLinear
+###model
+```{r}
+fitControl <- trainControl(## 10-fold CV
+                           method = "repeatedcv",
+                           number = 10,
+                           ## repeated ten times
+                           repeats = 10)
+```
+```{r}
+set.seed(825)
+svmFit <- train(V1 ~ ., data = training, 
+                 method = "svmLinear", 
+                 trControl = fitControl#,
+                 #verbose = FALSE
+                )
+svmFit
+```
+
+###Result from prediction
+- 95.4%
+```{r}
+a <- predict(svmFit, testing)
+preddt <- cbind(testing, a) %>%
+  mutate(Result = a == V1)
+
+preddt %>%
+  group_by(Result) %>%
+  summarise(n())
+```
+```{r}
+850/(891)
+```
+
+##lda
+###model
+```{r}
+set.seed(825)
+ldaFit <- train(V1 ~ ., data = training, 
+                 method = "lda", 
+                 trControl = fitControl
+                )
+ldaFit
+```
+
+###ROC curve
+- Threshold: 0.785
+```{r}
+#  predict probabilities
+trainPred <- predict(ldaFit, training, type = "prob")
+library(pROC)
+rocCurve <- roc(response = training$V1,
+                    predictor = trainPred[, "ham"])
+plot(rocCurve, print.thres = "best") 
+rocCurve$thresholds[which(max(rocCurve$sensitivities + rocCurve$specificities) == 
+                      rocCurve$sensitivities + rocCurve$specificities)]
+
+```
+
+###Result from prediction
+- 
+```{r}
+a <- predict(ldaFit, testing, type = "prob")
+preddt <- cbind(testing, a) %>%
+  mutate(Result = ifelse(ham > 0.9989451, "ham", "spam")) %>%
+  mutate(Acc = ifelse(Result == V1, T, F))
+
+preddt %>%
+  group_by(Acc) %>%
+  summarise(n())
+```
+
+```{r}
+819/(891)
+```
+
+
+##qda
+###model
+```{r}
+set.seed(825)
+qdaFit <- train(V1 ~ ., data = training, 
+                 method = "stepQDA", 
+                 trControl = fitControl
+                )
+qdaFit
+```
+
+###ROC curve
+- Threshold: 0.785
+```{r}
+#  predict probabilities
+trainPred <- predict(qdaFit, training, type = "prob")
+library(pROC)
+rocCurve <- roc(response = training$V1,
+                    predictor = trainPred[, "ham"])
+plot(rocCurve, print.thres = "best") 
+rocCurve$thresholds[which(max(rocCurve$sensitivities + rocCurve$specificities) == 
+                      rocCurve$sensitivities + rocCurve$specificities)]
+
+```
+
+###Result of testing set
+- 95.5%
+```{r}
+a <- predict(qdaFit, testing, type = "prob")
+preddt <- cbind(testing, a) %>%
+  mutate(Result = ifelse(ham > 0.8742493, "ham", "spam")) %>%
+  mutate(Acc = ifelse(Result == V1, T, F))
+
+preddt %>%
+  group_by(Acc) %>%
+  summarise(n())
+```
+```{r}
+832/891
+```
+
+##cforest
+###Model
+```{r}
+fitControl <- trainControl(## 10-fold CV
+                           method = "oob",
+                           number = 10,
+                           ## repeated ten times
+                           repeats = 10)
+```
+```{r}
+set.seed(825)
+cforestFit <- train(V1 ~ ., data = training, 
+                 method = "cforest", 
+                 trControl = fitControl)
+cforestFit
+```
+
+###ROC curve
+- Threshold: 
+```{r}
+#  predict probabilities
+trainPred <- predict(cforestFit, training, type = "prob")
+rocCurve <- roc(response = training$V1,
+                    predictor = trainPred[, "ham"])
+plot(rocCurve, print.thres = "best") 
+rocCurve$thresholds[which(max(rocCurve$sensitivities + rocCurve$specificities) == 
+                      rocCurve$sensitivities + rocCurve$specificities)]
+
+```
+
+###Result from prediction
+```{r}
+a <- predict(cforestFit, testing, type = "prob")
+preddt <- cbind(testing, a) %>%
+  mutate(Result = ifelse(ham > 0.7624878, "ham", "spam")) %>%
+  mutate(Acc = ifelse(Result == V1, T, F))
+
+preddt %>%
+  group_by(Acc) %>%
+  summarise(n())
+```
+
+```{r}
+854/891
+```
+
+The accuracy of the models are all around 94%. With random forest the highest, 95.8% on test set. But considering the time taken to run these model, gbm model might also be a good choice with accuracy 95.5%.
