@@ -1,1 +1,0 @@
-# DS_CLASS_2017-18_Olina
