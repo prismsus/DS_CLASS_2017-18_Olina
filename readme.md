@@ -2,10 +2,6 @@
 title: "readme"
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
 ## Produce 101 Data Analysis
 
 - This is a website about the korean show [Produce
